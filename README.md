@@ -42,3 +42,11 @@ Termux
 Batcave Cloud
    │
 Personal Storage
+```
+
+## Goals
+- Learn Linux and server administration through practice
+- Build a real personal cloud
+- Understand networking and secure remote access
+- Build the web interface from scratch
+- Document the engineering process
