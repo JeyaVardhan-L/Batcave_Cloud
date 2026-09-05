@@ -1,0 +1,6 @@
+# Personal Bat Cave data
+BatCave/
+*.key
+*.pem
+.env
+.env.*
