@@ -16,8 +16,19 @@ def static_files(path):
 @app.route("/api/files")
 def files():
     return {
-        "files": [file.name for file in BATCAVE_FILES.iterdir() if file.is_file()]
+        "files": [
+            {
+                "name": file.name,
+                "url": f"/files/{file.name}"
+            }
+            for file in BATCAVE_FILES.iterdir()
+            if file.is_file()
+        ]
     }
+
+@app.route("/files/<path:filename>")
+def download_file(filename):
+    return send_from_directory(BATCAVE_FILES, filename)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
