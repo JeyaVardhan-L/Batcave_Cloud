@@ -339,34 +339,23 @@ def delete_file():
 
 @app.route("/files/download/<path:filename>")
 def download_file(filename):
-    target = safe_relative_path(FILES_ROOT, filename)
-
-    if not target.exists() or not target.is_file():
-        abort(404)
-
-    relative_parent = target.parent.relative_to(FILES_ROOT)
+    safe_relative_path(FILES_ROOT, filename)
 
     return send_from_directory(
-        FILES_ROOT / relative_parent,
-        target.name,
+        FILES_ROOT,
+        filename,
         as_attachment=True,
     )
 
 
 @app.route("/files/open/<path:filename>")
 def open_file(filename):
-    target = safe_relative_path(FILES_ROOT, filename)
-
-    if not target.exists() or not target.is_file():
-        abort(404)
-
-    relative_parent = target.parent.relative_to(FILES_ROOT)
+    safe_relative_path(FILES_ROOT, filename)
 
     return send_from_directory(
-        FILES_ROOT / relative_parent,
-        target.name,
+        FILES_ROOT,
+        filename,
     )
-
 
 # --------------------------------------------------
 # Notes
@@ -677,17 +666,11 @@ def upload_photo():
 
 @app.route("/photos/view/<path:filename>")
 def view_photo(filename):
-    target = safe_relative_path(PHOTOS_ROOT, filename)
-
-    if not target.exists() or not target.is_file():
-        abort(404)
-
-    relative_parent = target.parent.relative_to(PHOTOS_ROOT)
+    safe_relative_path(PHOTOS_ROOT, filename)
 
     return send_from_directory(
-        relative_parent,
-        target.name,
-        directory=PHOTOS_ROOT,
+        PHOTOS_ROOT,
+        filename,
     )
 
 
