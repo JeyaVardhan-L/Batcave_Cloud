@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Batcave — Photos{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <p class="eyebrow">MEMORIES</p>
+        <h1>Photos</h1>
+        <p>Your personal photo collection.</p>
+    </div>
+</div>
+
+<div class="toolbar">
+    <form
+        action="{{ url_for('upload_photo') }}"
+        method="POST"
+        enctype="multipart/form-data"
+        class="inline-form"
+    >
+        <input
+            type="file"
+            name="photo"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            required
+        >
+
+        <button class="button">Upload Photo</button>
+    </form>
+</div>
+
+{% if photos %}
+
+<section class="photo-grid">
+    {% for photo in photos %}
+    <a
+        href="{{ url_for('view_photo', filename=photo.path) }}"
+        class="photo-card"
+        target="_blank"
+    >
+        <img
+            src="{{ url_for('view_photo', filename=photo.path) }}"
+            alt="{{ photo.name }}"
+            loading="lazy"
+        >
+        <span>{{ photo.name }}</span>
+    </a>
+    {% endfor %}
+</section>
+
+{% else %}
+
+<section class="panel">
+    <div class="empty">
+        No photos here yet.
+    </div>
+</section>
+
+{% endif %}
+
+{% endblock %}
