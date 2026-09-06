@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Batcave — Notes{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <div>
+        <p class="eyebrow">KNOWLEDGE</p>
+        <h1>Notes</h1>
+        <p>Persistent notes stored locally in Batcave.</p>
+    </div>
+</div>
+
+
+<section class="panel">
+
+    <h2>New Note</h2>
+
+    <form
+        action="{{ url_for('create_note') }}"
+        method="POST"
+        class="stack-form"
+    >
+
+        <input
+            type="text"
+            name="title"
+            placeholder="Note title"
+            required
+        >
+
+        <textarea
+            name="content"
+            placeholder="Write your note..."
+            rows="8"
+        ></textarea>
+
+        <button class="button">
+            Save Note
+        </button>
+
+    </form>
+
+</section>
+
+
+<section class="notes-grid">
+
+    {% for note in notes %}
+
+    <article class="note-card">
+
+        <div class="note-header">
+
+            <div>
+                <h2>{{ note["title"] }}</h2>
+
+                <small>
+                    {{ note["updated_at"] }}
+                </small>
+            </div>
+
+
+            <form
+                action="{{ url_for('delete_note', note_id=note['id']) }}"
+                method="POST"
+                onsubmit="return confirm('Delete this note?');"
+            >
+
+                <button class="small-button danger">
+                    Delete
+                </button>
+
+            </form>
+
+        </div>
+
+
+        <p class="note-content">
+            {{ note["content"] }}
+        </p>
+
+    </article>
+
+    {% else %}
+
+    <div class="empty">
+        No notes yet.
+    </div>
+
+    {% endfor %}
+
+</section>
+
+{% endblock %}

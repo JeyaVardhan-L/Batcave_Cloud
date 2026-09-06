@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}Batcave{% endblock %}</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='style.css') }}"
+    >
+</head>
+
+<body>
+
+<header class="topbar">
+
+    <a href="{{ url_for('dashboard') }}" class="brand">
+        🦇 Batcave
+    </a>
+
+    <nav>
+        <a href="{{ url_for('dashboard') }}">Home</a>
+        <a href="{{ url_for('files') }}">Files</a>
+        <a href="{{ url_for('photos') }}">Photos</a>
+        <a href="{{ url_for('notes') }}">Notes</a>
+        <a href="{{ url_for('ideas') }}">Ideas</a>
+        <a href="{{ url_for('projects') }}">Projects</a>
+        <a href="{{ url_for('backups') }}">Backups</a>
+    </nav>
+
+</header>
+
+
+<main class="container">
+
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash-container">
+                {% for message in messages %}
+                    <div class="flash">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% block content %}
+    {% endblock %}
+
+</main>
+
+</body>
+</html>

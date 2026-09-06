@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Batcave — Ideas{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+        <p class="eyebrow">CAPTURE</p>
+        <h1>Ideas</h1>
+        <p>Quickly capture things worth remembering.</p>
+    </div>
+
+</div>
+
+
+<section class="panel">
+
+    <form
+        action="{{ url_for('create_idea') }}"
+        method="POST"
+        class="stack-form"
+    >
+
+        <textarea
+            name="content"
+            placeholder="I have an idea..."
+            rows="4"
+            required
+        ></textarea>
+
+        <button class="button">
+            Capture Idea
+        </button>
+
+    </form>
+
+</section>
+
+
+<section class="idea-list">
+
+    {% for idea in ideas %}
+
+    <article class="idea-card">
+
+        <div class="idea-content">
+            {{ idea["content"] }}
+        </div>
+
+        <div class="idea-footer">
+
+            <small>
+                {{ idea["created_at"] }}
+            </small>
+
+
+            <form
+                action="{{ url_for('delete_idea', idea_id=idea['id']) }}"
+                method="POST"
+                onsubmit="return confirm('Delete this idea?');"
+            >
+
+                <button class="small-button danger">
+                    Delete
+                </button>
+
+            </form>
+
+        </div>
+
+    </article>
+
+    {% else %}
+
+    <div class="empty">
+        No ideas captured yet.
+    </div>
+
+    {% endfor %}
+
+</section>
+
+{% endblock %}

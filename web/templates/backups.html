@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Batcave — Backups{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+        <p class="eyebrow">PROTECTION</p>
+        <h1>Backups</h1>
+
+        <p>
+            Backup infrastructure will be added in a later phase.
+        </p>
+    </div>
+
+</div>
+
+
+<section class="panel">
+
+    <div class="backup-status">
+
+        <div class="card-icon">
+            💾
+        </div>
+
+        <div>
+
+            <h2>Backup system</h2>
+
+            <p>
+                {{ backup_count }} backup files currently exist.
+            </p>
+
+            <p class="muted">
+                The tablet itself is not considered a backup.
+                External backup targets will be added later.
+            </p>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<section class="panel">
+
+    <h2>Planned</h2>
+
+    <ul class="clean-list">
+
+        <li>📱 Phone backups</li>
+        <li>💻 Laptop backups</li>
+        <li>📂 Project backups</li>
+        <li>🗄️ Important document backups</li>
+        <li>☁️ Optional remote backup</li>
+
+    </ul>
+
+</section>
+
+{% endblock %}

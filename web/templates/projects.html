@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Batcave — Projects{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <div>
+        <p class="eyebrow">BUILD</p>
+        <h1>Projects</h1>
+        <p>Things you're actively building or planning.</p>
+    </div>
+
+</div>
+
+
+<section class="panel">
+
+    <h2>New Project</h2>
+
+    <form
+        action="{{ url_for('create_project') }}"
+        method="POST"
+        class="stack-form"
+    >
+
+        <input
+            type="text"
+            name="name"
+            placeholder="Project name"
+            required
+        >
+
+        <textarea
+            name="description"
+            placeholder="What is this project?"
+            rows="4"
+        ></textarea>
+
+        <button class="button">
+            Create Project
+        </button>
+
+    </form>
+
+</section>
+
+
+<section class="project-grid">
+
+    {% for project in projects %}
+
+    <article class="project-card">
+
+        <div class="project-header">
+
+            <div>
+                <h2>{{ project["name"] }}</h2>
+
+                <span class="status">
+                    {{ project["status"] }}
+                </span>
+            </div>
+
+        </div>
+
+
+        <p>
+            {{ project["description"] }}
+        </p>
+
+
+        <div class="project-controls">
+
+            <form
+                action="{{ url_for('change_project_status', project_id=project['id']) }}"
+                method="POST"
+            >
+
+                <select name="status">
+
+                    <option
+                        value="Active"
+                        {% if project["status"] == "Active" %}selected{% endif %}
+                    >
+                        Active
+                    </option>
+
+                    <option
+                        value="Paused"
+                        {% if project["status"] == "Paused" %}selected{% endif %}
+                    >
+                        Paused
+                    </option>
+
+                    <option
+                        value="Archived"
+                        {% if project["status"] == "Archived" %}selected{% endif %}
+                    >
+                        Archived
+                    </option>
+
+                </select>
+
+                <button class="small-button">
+                    Update
+                </button>
+
+            </form>
+
+
+            <form
+                action="{{ url_for('delete_project', project_id=project['id']) }}"
+                method="POST"
+                onsubmit="return confirm('Delete this project?');"
+            >
+
+                <button class="small-button danger">
+                    Delete
+                </button>
+
+            </form>
+
+        </div>
+
+    </article>
+
+    {% else %}
+
+    <div class="empty">
+        No projects yet.
+    </div>
+
+    {% endfor %}
+
+</section>
+
+{% endblock %}
