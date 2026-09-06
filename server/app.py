@@ -23,7 +23,7 @@ from database import get_connection, init_database
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-BATCAVE_ROOT = Path.home() / "storage" / "shared" / "BatCave"
+BATCAVE_ROOT = Path("/storage/emulated/0/BatCave")
 
 FILES_ROOT = BATCAVE_ROOT / "files"
 PHOTOS_ROOT = BATCAVE_ROOT / "photos"
