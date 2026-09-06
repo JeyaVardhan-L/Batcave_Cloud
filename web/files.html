@@ -1,41 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Batcave — Files</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
     <main class="dashboard">
-        <header>
+
+        <a href="/" class="back-link">← Back to Batcave</a>
+
+        <header class="page-header">
+            <p class="eyebrow">BATCAVE STORAGE</p>
             <h1>Files</h1>
-            <p>Your Batcave storage</p>
+            <p class="subtitle">
+                Your files stored on the Batcave.
+            </p>
         </header>
 
-        <section id="file-list">
-            Loading...
+        <section class="file-panel">
+
+            <div class="file-panel-header">
+                <h2>Your files</h2>
+                <span id="file-count">Loading...</span>
+            </div>
+
+            <div id="file-list">
+                Loading files...
+            </div>
+
         </section>
+
     </main>
 
+
     <script>
-        fetch("/api/files")
-            .then(response => response.json())
-            .then(data => {
-                const list = document.getElementById("file-list");
+
+        async function loadFiles() {
+
+            const fileList = document.getElementById("file-list");
+            const fileCount = document.getElementById("file-count");
+
+            try {
+
+                const response = await fetch("/api/files");
+
+                if (!response.ok) {
+                    throw new Error("Could not contact Batcave server.");
+                }
+
+                const data = await response.json();
+
+                fileCount.textContent =
+                    `${data.files.length} file${data.files.length === 1 ? "" : "s"}`;
+
 
                 if (data.files.length === 0) {
-                    list.innerHTML = "<p>No files yet.</p>";
+
+                    fileList.innerHTML = `
+                        <div class="empty-state">
+                            <p>No files yet.</p>
+                        </div>
+                    `;
+
                     return;
                 }
 
-                list.innerHTML = data.files
-                    .map(file => `<p>📄 ${file}</p>`)
-                    .join("");
-            });
+
+                fileList.innerHTML = data.files.map(file => {
+
+                    const name = escapeHtml(file.name);
+                    const url = encodeURI(file.url);
+
+                    return `
+                        <div class="file-row">
+
+                            <div class="file-info">
+                                <span class="file-icon">📄</span>
+                                <span>${name}</span>
+                            </div>
+
+                            <div class="file-actions">
+
+                                <a
+                                    href="${url}"
+                                    target="_blank"
+                                    class="file-button"
+                                >
+                                    Open
+                                </a>
+
+                                <a
+                                    href="${url}"
+                                    download
+                                    class="file-button"
+                                >
+                                    Download
+                                </a>
+
+                            </div>
+
+                        </div>
+                    `;
+
+                }).join("");
+
+            }
+
+            catch (error) {
+
+                fileCount.textContent = "";
+
+                fileList.innerHTML = `
+                    <div class="empty-state">
+                        <p>Unable to load files.</p>
+                        <small>${escapeHtml(error.message)}</small>
+                    </div>
+                `;
+
+            }
+        }
+
+
+        function escapeHtml(value) {
+
+            return String(value)
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+
+        }
+
+
+        loadFiles();
+
     </script>
 
 </body>
+
 </html>
