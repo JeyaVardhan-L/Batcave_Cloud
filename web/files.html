@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batcave — Files</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <main class="dashboard">
+        <header>
+            <h1>Files</h1>
+            <p>Your Batcave storage</p>
+        </header>
+
+        <section id="file-list">
+            Loading...
+        </section>
+    </main>
+
+    <script>
+        fetch("/api/files")
+            .then(response => response.json())
+            .then(data => {
+                const list = document.getElementById("file-list");
+
+                if (data.files.length === 0) {
+                    list.innerHTML = "<p>No files yet.</p>";
+                    return;
+                }
+
+                list.innerHTML = data.files
+                    .map(file => `<p>📄 ${file}</p>`)
+                    .join("");
+            });
+    </script>
+
+</body>
+</html>
