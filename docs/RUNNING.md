@@ -83,6 +83,12 @@ destination must already exist. The Files root cannot be moved, and folders
 cannot be moved into themselves or descendants. The storage summary uses the
 filesystem capacity reported for the Batcave data root and does not walk files.
 
+## Notes v0.4.1
+
+Notes can be opened for editing, saved without changing their creation time, and
+searched by title or content. Notes search is available from the Notes page and
+returns results ordered by most recently updated.
+
 ## Security status and limitations
 
 This is intended for a trusted LAN only. It has no HTTPS, public-internet

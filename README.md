@@ -59,3 +59,6 @@ guide](docs/RUNNING.md) before starting it.
 
 Files v0.3 adds safe breadcrumbs, sorting, hierarchy search, move operations,
 metadata, and a filesystem storage summary.
+
+Notes v0.4.1 adds editing and search while keeping notes private to the local
+authenticated workspace.

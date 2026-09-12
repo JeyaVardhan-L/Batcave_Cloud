@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Batcave — Edit Note{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <p class="eyebrow">KNOWLEDGE</p>
+        <h1>Edit Note</h1>
+        <p>Created {{ note["created_at"] }} · Last updated {{ note["updated_at"] }}</p>
+    </div>
+</div>
+
+<section class="panel note-editor-panel">
+    <form action="{{ url_for('update_note', note_id=note['id']) }}" method="POST" class="stack-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="text" name="title" value="{{ note['title'] }}" required aria-label="Note title">
+        <textarea name="content" rows="16" aria-label="Note content">{{ note["content"] }}</textarea>
+        <div class="editor-actions">
+            <button class="button">Save Changes</button>
+            <a class="button secondary" href="{{ url_for('notes') }}">Cancel</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

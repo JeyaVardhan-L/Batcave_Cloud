@@ -256,7 +256,21 @@ def register_routes(app) -> None:
 
     @app.route("/notes")
     def notes():
-        return render_template("notes.html", notes=get_db().execute("SELECT * FROM notes ORDER BY updated_at DESC").fetchall())
+        search_query = request.args.get("q", "").strip()
+        db = get_db()
+        if search_query:
+            pattern = f"%{search_query}%"
+            notes_list = db.execute(
+                """
+                SELECT * FROM notes
+                WHERE title LIKE ? COLLATE NOCASE OR content LIKE ? COLLATE NOCASE
+                ORDER BY updated_at DESC
+                """,
+                (pattern, pattern),
+            ).fetchall()
+        else:
+            notes_list = db.execute("SELECT * FROM notes ORDER BY updated_at DESC").fetchall()
+        return render_template("notes.html", notes=notes_list, search_query=search_query)
 
     @app.post("/notes/create")
     def create_note():
@@ -270,10 +284,41 @@ def register_routes(app) -> None:
             flash("Note created.")
         return redirect(url_for("notes"))
 
+    @app.get("/notes/<int:note_id>")
+    def edit_note(note_id):
+        note = get_db().execute("SELECT * FROM notes WHERE id = ?", (note_id,)).fetchone()
+        if note is None:
+            abort(404)
+        return render_template("note_edit.html", note=note)
+
+    @app.post("/notes/<int:note_id>/update")
+    def update_note(note_id):
+        db = get_db()
+        if db.execute("SELECT 1 FROM notes WHERE id = ?", (note_id,)).fetchone() is None:
+            abort(404)
+        title = request.form.get("title", "").strip()
+        content = request.form.get("content", "").strip()
+        if not title:
+            flash("Note title is required.")
+            return redirect(url_for("edit_note", note_id=note_id))
+        db.execute(
+            """
+            UPDATE notes
+            SET title = ?, content = ?, updated_at = strftime('%Y-%m-%d %H:%M:%f', 'now')
+            WHERE id = ?
+            """,
+            (title, content, note_id),
+        )
+        db.commit()
+        flash("Note updated.")
+        return redirect(url_for("edit_note", note_id=note_id))
+
     @app.post("/notes/delete/<int:note_id>")
     def delete_note(note_id):
         db = get_db()
-        db.execute("DELETE FROM notes WHERE id = ?", (note_id,))
+        deleted = db.execute("DELETE FROM notes WHERE id = ?", (note_id,))
+        if deleted.rowcount == 0:
+            abort(404)
         db.commit()
         flash("Note deleted.")
         return redirect(url_for("notes"))

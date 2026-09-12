@@ -3,7 +3,6 @@
 {% block title %}Batcave — Notes{% endblock %}
 
 {% block content %}
-
 <div class="page-header">
     <div>
         <p class="eyebrow">KNOWLEDGE</p>
@@ -12,88 +11,48 @@
     </div>
 </div>
 
-
 <section class="panel">
-
     <h2>New Note</h2>
-
-    <form
-        action="{{ url_for('create_note') }}"
-        method="POST"
-        class="stack-form"
-    >
-
+    <form action="{{ url_for('create_note') }}" method="POST" class="stack-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-        <input
-            type="text"
-            name="title"
-            placeholder="Note title"
-            required
-        >
-
-        <textarea
-            name="content"
-            placeholder="Write your note..."
-            rows="8"
-        ></textarea>
-
-        <button class="button">
-            Save Note
-        </button>
-
+        <input type="text" name="title" placeholder="Note title" required>
+        <textarea name="content" placeholder="Write your note..." rows="8"></textarea>
+        <button class="button">Save Note</button>
     </form>
-
 </section>
 
+<form action="{{ url_for('notes') }}" method="GET" class="notes-search">
+    <input type="search" name="q" value="{{ search_query }}" placeholder="Search notes" aria-label="Search notes">
+    <button class="button">Search</button>
+    {% if search_query %}
+        <a class="button secondary" href="{{ url_for('notes') }}">Clear</a>
+    {% endif %}
+</form>
+
+{% if search_query %}
+    <p class="search-status">Search results for “{{ search_query }}”.</p>
+{% endif %}
 
 <section class="notes-grid">
-
     {% for note in notes %}
-
     <article class="note-card">
-
         <div class="note-header">
-
             <div>
-                <h2>{{ note["title"] }}</h2>
-
-                <small>
-                    {{ note["updated_at"] }}
-                </small>
+                <h2><a class="note-title-link" href="{{ url_for('edit_note', note_id=note['id']) }}">{{ note["title"] }}</a></h2>
+                <small>Updated {{ note["updated_at"] }}</small>
             </div>
-
-
-            <form
-                action="{{ url_for('delete_note', note_id=note['id']) }}"
-                method="POST"
-            >
-
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                <button class="small-button danger">
-                    Delete
-                </button>
-
-            </form>
-
+            <div class="note-actions">
+                <a class="small-button secondary" href="{{ url_for('edit_note', note_id=note['id']) }}">Edit</a>
+                <form action="{{ url_for('delete_note', note_id=note['id']) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="small-button danger">Delete</button>
+                </form>
+            </div>
         </div>
-
-
-        <p class="note-content">
-            {{ note["content"] }}
-        </p>
-
+        <p class="note-content">{{ note["content"] }}</p>
     </article>
-
     {% else %}
-
-    <div class="empty">
-        No notes yet.
-    </div>
-
+    <div class="empty">{% if search_query %}No matching notes were found.{% else %}No notes yet.{% endif %}</div>
     {% endfor %}
-
 </section>
-
 {% endblock %}

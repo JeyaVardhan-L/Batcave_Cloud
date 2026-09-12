@@ -457,6 +457,53 @@ textarea {
 }
 
 
+.notes-search,
+.note-actions,
+.editor-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+
+.notes-search {
+    margin: 0 0 16px;
+}
+
+
+.notes-search input {
+    min-width: min(100%, 280px);
+}
+
+
+.note-actions form {
+    margin: 0;
+}
+
+
+.note-title-link {
+    overflow-wrap: anywhere;
+}
+
+
+.note-title-link:hover {
+    color: var(--accent-hover);
+}
+
+
+.note-editor-panel {
+    max-width: 900px;
+}
+
+
+@media (max-width: 800px) {
+    .notes-search input {
+        flex: 1;
+    }
+}
+
+
 .idea-list {
     display: flex;
 
