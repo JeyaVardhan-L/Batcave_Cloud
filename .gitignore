@@ -10,6 +10,10 @@ BatCave/
 
 __pycache__/
 *.pyc
+.venv/
+.pytest_tmp/
+.pytest_cache_new/
+.pytest_clean/
 
 # Local development
 

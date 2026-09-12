@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Batcave — Error {{ error.code }}{% endblock %}
+
+{% block content %}
+<section class="panel">
+    <p class="eyebrow">ERROR {{ error.code }}</p>
+    <h1>{{ message }}</h1>
+    <p>{{ error.description if error.description else "Please return to the dashboard and try again." }}</p>
+    <a class="button" href="{{ url_for('dashboard') }}">Return home</a>
+</section>
+{% endblock %}

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batcave — Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<main class="container login-container">
+    <section class="panel login-panel">
+        <p class="eyebrow">PERSONAL CLOUD</p>
+        <h1>Batcave</h1>
+        <p>Enter your local Batcave password.</p>
+        {% with messages = get_flashed_messages() %}
+            {% for message in messages %}<div class="flash">{{ message }}</div>{% endfor %}
+        {% endwith %}
+        <form action="{{ url_for('login') }}" method="POST" class="stack-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="{{ next_url or '' }}">
+            <input type="password" name="password" placeholder="Password" autocomplete="current-password" required autofocus>
+            <button class="button">Log in</button>
+        </form>
+    </section>
+</main>
+</body>
+</html>

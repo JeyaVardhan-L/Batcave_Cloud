@@ -50,3 +50,9 @@ Personal Storage
 - Understand networking and secure remote access
 - Build the web interface from scratch
 - Document the engineering process
+
+## Foundation v0.2
+
+The application now has a one-user local login, CSRF protection, safer uploads,
+SQLite migrations, and an automated test suite. See [the run and configuration
+guide](docs/RUNNING.md) before starting it.

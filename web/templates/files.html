@@ -41,6 +41,8 @@
         class="inline-form"
     >
 
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
         <input
             type="hidden"
             name="path"
@@ -66,11 +68,15 @@
         class="inline-form"
     >
 
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
         <input
             type="hidden"
             name="path"
             value="{{ current_path }}"
         >
+
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <input
             type="text"
@@ -117,6 +123,8 @@
             class="rename-form"
         >
 
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
             <input
                 type="hidden"
                 name="path"
@@ -140,8 +148,9 @@
         <form
             action="{{ url_for('delete_file') }}"
             method="POST"
-            onsubmit="return confirm('Delete this folder? It must be empty.');"
         >
+
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <input
                 type="hidden"
@@ -195,14 +204,6 @@
 
                 <a
                     href="{{ url_for('open_file', filename=file.path) }}"
-                    target="_blank"
-                    class="small-button"
-                >
-                    Open
-                </a>
-
-                <a
-                    href="{{ url_for('download_file', filename=file.path) }}"
                     class="small-button"
                 >
                     Download
@@ -214,6 +215,8 @@
                     method="POST"
                     class="rename-form"
                 >
+
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                     <input
                         type="hidden"
@@ -238,8 +241,9 @@
                 <form
                     action="{{ url_for('delete_file') }}"
                     method="POST"
-                    onsubmit="return confirm('Delete this file?');"
                 >
+
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                     <input
                         type="hidden"

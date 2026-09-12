@@ -90,6 +90,27 @@ nav a:hover {
 }
 
 
+.logout-form {
+    margin: 0;
+}
+
+
+.nav-button {
+    border: 0;
+    padding: 0;
+
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    cursor: pointer;
+}
+
+
+.nav-button:hover {
+    color: var(--text);
+}
+
+
 .container {
     width: min(1200px, calc(100% - 40px));
 
@@ -647,4 +668,16 @@ textarea {
         width: auto;
     }
 
+}
+
+
+.login-container {
+    display: grid;
+    min-height: 100vh;
+    place-items: center;
+}
+
+
+.login-panel {
+    width: min(100%, 440px);
 }
