@@ -8,10 +8,30 @@ from flask import abort, current_app, flash, redirect, render_template, request,
 
 try:
     from .database import get_db
-    from .storage import InvalidPathError, clean_name, file_info, is_photo_filename, resolve_path, save_new_upload, validate_photo
+    from .storage import (
+        InvalidPathError,
+        clean_name,
+        file_info,
+        folder_info,
+        is_photo_filename,
+        resolve_path,
+        save_new_upload,
+        storage_usage,
+        validate_photo,
+    )
 except ImportError:  # pragma: no cover - direct-script deployment path
     from database import get_db
-    from storage import InvalidPathError, clean_name, file_info, is_photo_filename, resolve_path, save_new_upload, validate_photo
+    from storage import (
+        InvalidPathError,
+        clean_name,
+        file_info,
+        folder_info,
+        is_photo_filename,
+        resolve_path,
+        save_new_upload,
+        storage_usage,
+        validate_photo,
+    )
 
 
 def _root(name: str) -> Path:
@@ -28,6 +48,51 @@ def _safe_path(root: Path, value: str, *, allow_root: bool = True) -> Path:
 def _parent_path(path: Path, root: Path) -> str:
     parent = path.parent.relative_to(root).as_posix()
     return "" if parent == "." else parent
+
+
+VALID_FILE_SORTS = {"name", "size", "modified"}
+VALID_SORT_DIRECTIONS = {"asc", "desc"}
+
+
+def _file_sort_options() -> tuple[str, str]:
+    sort_by = request.args.get("sort", "name")
+    direction = request.args.get("direction", "asc")
+    return (
+        sort_by if sort_by in VALID_FILE_SORTS else "name",
+        direction if direction in VALID_SORT_DIRECTIONS else "asc",
+    )
+
+
+def _sort_file_entries(entries: list[dict], sort_by: str, direction: str) -> list[dict]:
+    key_map = {
+        "name": lambda item: item["name"].casefold(),
+        "size": lambda item: item["size_bytes"],
+        "modified": lambda item: item["modified_timestamp"],
+    }
+    return sorted(entries, key=key_map[sort_by], reverse=direction == "desc")
+
+
+def _breadcrumbs(root: Path, current_dir: Path) -> list[dict]:
+    crumbs = [{"name": "Files", "path": ""}]
+    relative = current_dir.relative_to(root)
+    current = Path()
+    for part in relative.parts:
+        current /= part
+        crumbs.append({"name": part, "path": current.as_posix()})
+    return crumbs
+
+
+def _safe_entry_info(root: Path, item: Path) -> dict | None:
+    """Skip broken or externally pointing links while building a display list."""
+    try:
+        safe_item = resolve_path(root, item.relative_to(root).as_posix())
+    except (InvalidPathError, ValueError):
+        return None
+    if safe_item.is_dir():
+        return folder_info(safe_item, root)
+    if safe_item.is_file():
+        return file_info(safe_item, root)
+    return None
 
 
 def register_routes(app) -> None:
@@ -53,17 +118,36 @@ def register_routes(app) -> None:
             abort(404)
         if not current_dir.is_dir():
             abort(400, "Not a directory.")
-        folders, files_list = [], []
-        for item in current_dir.iterdir():
-            if item.is_dir():
-                folders.append({"name": item.name, "path": item.relative_to(root).as_posix()})
-            elif item.is_file():
-                files_list.append(file_info(item, root))
-        folders.sort(key=lambda item: item["name"].lower())
-        files_list.sort(key=lambda item: item["name"].lower())
+        sort_by, sort_direction = _file_sort_options()
+        search_query = request.args.get("q", "").strip()
+        if len(search_query) > 120:
+            abort(400, "Search queries must be 120 characters or fewer.")
+
+        candidates = root.rglob("*") if search_query else current_dir.iterdir()
+        entries = []
+        for item in candidates:
+            if search_query and search_query.casefold() not in item.name.casefold():
+                continue
+            entry = _safe_entry_info(root, item)
+            if entry is not None:
+                entries.append(entry)
+
+        folders = _sort_file_entries([item for item in entries if item["is_folder"]], sort_by, sort_direction)
+        files_list = _sort_file_entries([item for item in entries if not item["is_folder"]], sort_by, sort_direction)
         parent_path = None if not subpath else Path(subpath).parent.as_posix()
-        return render_template("files.html", current_path=subpath, folders=folders, files=files_list,
-                               parent_path="" if parent_path == "." else parent_path)
+        return render_template(
+            "files.html",
+            current_path=subpath,
+            folders=folders,
+            files=files_list,
+            parent_path="" if parent_path == "." else parent_path,
+            breadcrumbs=_breadcrumbs(root, current_dir),
+            search_query=search_query,
+            search_active=bool(search_query),
+            sort_by=sort_by,
+            sort_direction=sort_direction,
+            usage=storage_usage(root),
+        )
 
     @app.post("/files/upload")
     def upload_file():
@@ -133,6 +217,33 @@ def register_routes(app) -> None:
             target.unlink()
         flash(f"Deleted {target.name}")
         return redirect(url_for("files", subpath=parent_path))
+
+    @app.post("/files/move")
+    def move_file():
+        root = _root("files")
+        source = _safe_path(root, request.form.get("path", ""), allow_root=False)
+        destination = _safe_path(root, request.form.get("destination", ""))
+        if not source.exists():
+            abort(404)
+        if not destination.is_dir():
+            abort(400, "Destination folder does not exist.")
+        if source.parent == destination:
+            flash("That item is already in the selected folder.")
+            return redirect(url_for("files", subpath=_parent_path(source, root)))
+        if source.is_dir():
+            try:
+                destination.relative_to(source)
+            except ValueError:
+                pass
+            else:
+                abort(400, "A folder cannot be moved into itself or one of its descendants.")
+        target = destination / source.name
+        if target.exists():
+            flash("The destination already contains an item with that name.")
+        else:
+            source.rename(target)
+            flash(f"Moved {source.name}.")
+        return redirect(url_for("files", subpath=destination.relative_to(root).as_posix()))
 
     @app.route("/files/download/<path:filename>")
     @app.route("/files/open/<path:filename>", endpoint="open_file")

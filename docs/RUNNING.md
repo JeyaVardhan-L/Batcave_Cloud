@@ -73,6 +73,16 @@ repository contains code only. For a Windows development run, set
 - `server/routes.py` — authenticated feature routes
 - `tests/` — isolated tests using temporary storage
 
+## Files v0.3
+
+The Files page supports clickable breadcrumbs, metadata, sorting, and a
+case-insensitive filename/folder-name search across the Files hierarchy. Search
+is the only Files-view action that recursively scans the hierarchy. Move uses a
+Batcave-relative destination folder path (for example, `archive/2026`); the
+destination must already exist. The Files root cannot be moved, and folders
+cannot be moved into themselves or descendants. The storage summary uses the
+filesystem capacity reported for the Batcave data root and does not walk files.
+
 ## Security status and limitations
 
 This is intended for a trusted LAN only. It has no HTTPS, public-internet

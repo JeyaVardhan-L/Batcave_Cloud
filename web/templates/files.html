@@ -3,274 +3,126 @@
 {% block title %}Batcave — Files{% endblock %}
 
 {% block content %}
-
-<div class="page-header">
-
+<div class="page-header files-header">
     <div>
         <p class="eyebrow">STORAGE</p>
         <h1>Files</h1>
-
-        <p>
-            {% if current_path %}
-                / {{ current_path }}
-            {% else %}
-                /files
-            {% endif %}
-        </p>
+        <nav class="breadcrumbs" aria-label="File path">
+            {% for crumb in breadcrumbs %}
+                {% if not loop.first %}<span aria-hidden="true">/</span>{% endif %}
+                {% if loop.last %}
+                    <span aria-current="page">{{ crumb.name }}</span>
+                {% else %}
+                    <a href="{{ url_for('files', subpath=crumb.path, sort=sort_by, direction=sort_direction, q=search_query) }}">{{ crumb.name }}</a>
+                {% endif %}
+            {% endfor %}
+        </nav>
     </div>
 
+    <div class="storage-summary" aria-label="Storage usage">
+        <div><span>Used</span><strong>{{ usage.used }}</strong></div>
+        <div><span>Free</span><strong>{{ usage.free }}</strong></div>
+        <div><span>Total</span><strong>{{ usage.total }}</strong></div>
+    </div>
 </div>
 
+<section class="panel files-controls">
+    <form action="{{ url_for('files', subpath=current_path) }}" method="GET" class="search-form">
+        <input type="search" name="q" value="{{ search_query }}" placeholder="Search all files and folders" maxlength="120" aria-label="Search files and folders">
+        <input type="hidden" name="sort" value="{{ sort_by }}">
+        <input type="hidden" name="direction" value="{{ sort_direction }}">
+        <button class="button">Search</button>
+        {% if search_active %}
+            <a class="button secondary" href="{{ url_for('files', subpath=current_path, sort=sort_by, direction=sort_direction) }}">Clear</a>
+        {% endif %}
+    </form>
+
+    <form action="{{ url_for('files', subpath=current_path) }}" method="GET" class="sort-form">
+        {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
+        <label for="file-sort">Sort</label>
+        <select id="file-sort" name="sort">
+            <option value="name" {% if sort_by == "name" %}selected{% endif %}>Name</option>
+            <option value="size" {% if sort_by == "size" %}selected{% endif %}>Size</option>
+            <option value="modified" {% if sort_by == "modified" %}selected{% endif %}>Modified</option>
+        </select>
+        <select name="direction" aria-label="Sort direction">
+            <option value="asc" {% if sort_direction == "asc" %}selected{% endif %}>Ascending</option>
+            <option value="desc" {% if sort_direction == "desc" %}selected{% endif %}>Descending</option>
+        </select>
+        <button class="small-button">Apply</button>
+    </form>
+</section>
 
 <div class="toolbar">
-
     {% if parent_path is not none %}
-        <a
-            href="{{ url_for('files', subpath=parent_path) }}"
-            class="button secondary"
-        >
-            ← Back
-        </a>
+        <a href="{{ url_for('files', subpath=parent_path, sort=sort_by, direction=sort_direction, q=search_query) }}" class="button secondary">Back</a>
     {% endif %}
 
-
-    <form
-        action="{{ url_for('upload_file') }}"
-        method="POST"
-        enctype="multipart/form-data"
-        class="inline-form"
-    >
-
+    <form action="{{ url_for('upload_file') }}" method="POST" enctype="multipart/form-data" class="inline-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-        <input
-            type="hidden"
-            name="path"
-            value="{{ current_path }}"
-        >
-
-        <input
-            type="file"
-            name="file"
-            required
-        >
-
-        <button class="button">
-            Upload
-        </button>
-
+        <input type="hidden" name="path" value="{{ current_path }}">
+        <input type="file" name="file" required>
+        <button class="button">Upload</button>
     </form>
 
-
-    <form
-        action="{{ url_for('create_folder') }}"
-        method="POST"
-        class="inline-form"
-    >
-
+    <form action="{{ url_for('create_folder') }}" method="POST" class="inline-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-        <input
-            type="hidden"
-            name="path"
-            value="{{ current_path }}"
-        >
-
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-        <input
-            type="text"
-            name="folder_name"
-            placeholder="New folder"
-            required
-        >
-
-        <button class="button secondary">
-            + Folder
-        </button>
-
+        <input type="hidden" name="path" value="{{ current_path }}">
+        <input type="text" name="folder_name" placeholder="New folder" required>
+        <button class="button secondary">+ Folder</button>
     </form>
-
 </div>
 
-
-{% if folders %}
-
-<section class="panel">
-
-    <h2>Folders</h2>
-
-    {% for folder in folders %}
-
-    <div class="file-row">
-
-        <div class="file-info">
-
-            <span class="file-icon">📁</span>
-
-            <a
-                href="{{ url_for('files', subpath=folder.path) }}"
-            >
-                {{ folder.name }}
-            </a>
-
-        </div>
-
-
-        <form
-            action="{{ url_for('rename_file') }}"
-            method="POST"
-            class="rename-form"
-        >
-
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-            <input
-                type="hidden"
-                name="path"
-                value="{{ folder.path }}"
-            >
-
-            <input
-                type="text"
-                name="new_name"
-                placeholder="Rename"
-                required
-            >
-
-            <button class="small-button">
-                Rename
-            </button>
-
-        </form>
-
-
-        <form
-            action="{{ url_for('delete_file') }}"
-            method="POST"
-        >
-
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-            <input
-                type="hidden"
-                name="path"
-                value="{{ folder.path }}"
-            >
-
-            <button class="small-button danger">
-                Delete
-            </button>
-
-        </form>
-
-    </div>
-
-    {% endfor %}
-
-</section>
-
+{% if search_active %}
+    <p class="search-status">Search results for “{{ search_query }}” across the Files hierarchy.</p>
 {% endif %}
 
+<section class="panel file-list-panel">
+    <div class="file-list-heading">
+        <span>Name</span><span>Type</span><span>Size</span><span>Modified</span><span>Actions</span>
+    </div>
 
-<section class="panel">
-
-    <h2>Files</h2>
-
-    {% if files %}
-
-        {% for file in files %}
-
-        <div class="file-row">
-
+    {% for item in folders + files %}
+        <article class="file-row file-row-detailed {% if item.is_folder %}is-folder{% endif %}">
             <div class="file-info">
-
-                <span class="file-icon">📄</span>
-
+                <span class="file-icon">{% if item.is_folder %}📁{% else %}📄{% endif %}</span>
                 <div>
-                    <strong>{{ file.name }}</strong>
-
-                    <small>
-                        {{ file.size }}
-                        ·
-                        {{ file.modified }}
-                    </small>
+                    {% if item.is_folder %}
+                        <a class="file-name" href="{{ url_for('files', subpath=item.path, sort=sort_by, direction=sort_direction) }}">{{ item.name }}</a>
+                    {% else %}
+                        <strong>{{ item.name }}</strong>
+                    {% endif %}
+                    {% if search_active %}<small>{{ item.path }}</small>{% endif %}
                 </div>
-
             </div>
-
-
+            <span class="file-type">{{ item.type }}</span>
+            <span class="file-size">{{ item.size }}</span>
+            <time class="file-modified">{{ item.modified }}</time>
             <div class="file-actions">
-
-                <a
-                    href="{{ url_for('open_file', filename=file.path) }}"
-                    class="small-button"
-                >
-                    Download
-                </a>
-
-
-                <form
-                    action="{{ url_for('rename_file') }}"
-                    method="POST"
-                    class="rename-form"
-                >
-
+                {% if not item.is_folder %}
+                    <a href="{{ url_for('open_file', filename=item.path) }}" class="small-button">Download</a>
+                {% endif %}
+                <form action="{{ url_for('rename_file') }}" method="POST" class="rename-form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                    <input
-                        type="hidden"
-                        name="path"
-                        value="{{ file.path }}"
-                    >
-
-                    <input
-                        type="text"
-                        name="new_name"
-                        placeholder="Rename"
-                        required
-                    >
-
-                    <button class="small-button">
-                        Rename
-                    </button>
-
+                    <input type="hidden" name="path" value="{{ item.path }}">
+                    <input type="text" name="new_name" placeholder="Rename" required aria-label="New name for {{ item.name }}">
+                    <button class="small-button">Rename</button>
                 </form>
-
-
-                <form
-                    action="{{ url_for('delete_file') }}"
-                    method="POST"
-                >
-
+                <form action="{{ url_for('move_file') }}" method="POST" class="move-form">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                    <input
-                        type="hidden"
-                        name="path"
-                        value="{{ file.path }}"
-                    >
-
-                    <button class="small-button danger">
-                        Delete
-                    </button>
-
+                    <input type="hidden" name="path" value="{{ item.path }}">
+                    <input type="text" name="destination" placeholder="Move to folder path" required aria-label="Destination folder for {{ item.name }}">
+                    <button class="small-button secondary">Move</button>
                 </form>
-
+                <form action="{{ url_for('delete_file') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="path" value="{{ item.path }}">
+                    <button class="small-button danger">Delete</button>
+                </form>
             </div>
-
-        </div>
-
-        {% endfor %}
-
+        </article>
     {% else %}
-
-        <div class="empty">
-            No files here yet.
-        </div>
-
-    {% endif %}
-
+        <div class="empty">{% if search_active %}No matching files or folders were found.{% else %}No files here yet.{% endif %}</div>
+    {% endfor %}
 </section>
-
 {% endblock %}

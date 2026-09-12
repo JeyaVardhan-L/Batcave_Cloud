@@ -51,8 +51,11 @@ Personal Storage
 - Build the web interface from scratch
 - Document the engineering process
 
-## Foundation v0.2
+## Foundation v0.2 and Files v0.3
 
 The application now has a one-user local login, CSRF protection, safer uploads,
 SQLite migrations, and an automated test suite. See [the run and configuration
 guide](docs/RUNNING.md) before starting it.
+
+Files v0.3 adds safe breadcrumbs, sorting, hierarchy search, move operations,
+metadata, and a filesystem storage summary.

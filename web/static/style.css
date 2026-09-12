@@ -681,3 +681,160 @@ textarea {
 .login-panel {
     width: min(100%, 440px);
 }
+
+
+.files-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+
+.breadcrumbs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    color: var(--muted);
+}
+
+
+.breadcrumbs a {
+    color: var(--accent-hover);
+}
+
+
+.storage-summary {
+    display: flex;
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+}
+
+
+.storage-summary div {
+    display: grid;
+    gap: 4px;
+    min-width: 88px;
+    padding: 10px 12px;
+    background: var(--surface);
+}
+
+
+.storage-summary span,
+.file-list-heading,
+.file-type,
+.file-size,
+.file-modified,
+.search-status {
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+
+.files-controls,
+.search-form,
+.sort-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+
+.files-controls {
+    justify-content: space-between;
+}
+
+
+.search-form input[type="search"] {
+    min-width: min(100%, 260px);
+}
+
+
+.sort-form label {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+
+.search-status {
+    margin: -6px 0 16px;
+}
+
+
+.file-list-panel {
+    overflow-x: auto;
+}
+
+
+.file-list-heading,
+.file-row-detailed {
+    display: grid;
+    grid-template-columns: minmax(220px, 2fr) minmax(100px, 0.7fr) minmax(75px, 0.5fr) minmax(145px, 0.9fr) minmax(270px, 1.8fr);
+    align-items: center;
+    gap: 14px;
+    min-width: 950px;
+}
+
+
+.file-list-heading {
+    padding: 0 0 10px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 700;
+}
+
+
+.file-row-detailed {
+    justify-content: initial;
+}
+
+
+.file-name {
+    display: block;
+    overflow-wrap: anywhere;
+    font-weight: 700;
+}
+
+
+.file-row-detailed.is-folder .file-name {
+    color: var(--accent-hover);
+}
+
+
+.file-actions .move-form {
+    display: flex;
+    gap: 6px;
+}
+
+
+.move-form input {
+    width: 140px;
+    padding: 7px 9px;
+    font-size: 0.8rem;
+}
+
+
+@media (max-width: 800px) {
+    .files-header {
+        flex-direction: column;
+    }
+
+    .storage-summary {
+        width: 100%;
+    }
+
+    .storage-summary div {
+        flex: 1;
+    }
+
+    .files-controls {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .search-form input[type="search"] {
+        flex: 1;
+    }
+}

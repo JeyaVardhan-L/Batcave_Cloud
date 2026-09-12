@@ -88,7 +88,7 @@ def test_rendered_mutating_forms_include_csrf_tokens(client):
     login(client)
     for path in ("/files", "/photos", "/notes", "/ideas", "/projects"):
         response = client.get(path)
-        forms = re.findall(r"<form\b.*?</form>", response.get_data(as_text=True), flags=re.DOTALL)
+        forms = re.findall(r'<form\b[^>]*method="POST".*?</form>', response.get_data(as_text=True), flags=re.DOTALL)
         assert forms
         assert all('name="csrf_token"' in form for form in forms)
 

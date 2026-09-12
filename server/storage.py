@@ -101,5 +101,34 @@ def file_info(path: Path, relative_to: Path) -> dict:
         "name": path.name,
         "path": path.relative_to(relative_to).as_posix(),
         "size": format_size(stat.st_size),
-        "modified": datetime.fromtimestamp(stat.st_mtime).strftime("%Y-%m-%d %H:%M"),
+        "size_bytes": stat.st_size,
+        "modified": datetime.fromtimestamp(stat.st_mtime).astimezone().strftime("%b %d, %Y %H:%M"),
+        "modified_timestamp": stat.st_mtime,
+        "type": f"{path.suffix[1:].upper()} file" if path.suffix else "File",
+        "is_folder": False,
+    }
+
+
+def folder_info(path: Path, relative_to: Path) -> dict:
+    """Return display metadata without recursively calculating directory size."""
+    stat = path.stat()
+    return {
+        "name": path.name,
+        "path": path.relative_to(relative_to).as_posix(),
+        "size": "—",
+        "size_bytes": 0,
+        "modified": datetime.fromtimestamp(stat.st_mtime).astimezone().strftime("%b %d, %Y %H:%M"),
+        "modified_timestamp": stat.st_mtime,
+        "type": "Folder",
+        "is_folder": True,
+    }
+
+
+def storage_usage(path: Path) -> dict:
+    """Report the capacity of the filesystem holding path without walking files."""
+    usage = shutil.disk_usage(path)
+    return {
+        "used": format_size(usage.used),
+        "free": format_size(usage.free),
+        "total": format_size(usage.total),
     }
