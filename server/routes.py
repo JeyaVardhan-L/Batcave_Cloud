@@ -325,7 +325,16 @@ def register_routes(app) -> None:
 
     @app.route("/ideas")
     def ideas():
-        return render_template("ideas.html", ideas=get_db().execute("SELECT * FROM ideas ORDER BY created_at DESC").fetchall())
+        search_query = request.args.get("q", "").strip()
+        db = get_db()
+        if search_query:
+            ideas_list = db.execute(
+                "SELECT * FROM ideas WHERE content LIKE ? COLLATE NOCASE ORDER BY created_at DESC",
+                (f"%{search_query}%",),
+            ).fetchall()
+        else:
+            ideas_list = db.execute("SELECT * FROM ideas ORDER BY created_at DESC").fetchall()
+        return render_template("ideas.html", ideas=ideas_list, search_query=search_query)
 
     @app.post("/ideas/create")
     def create_idea():
@@ -339,10 +348,33 @@ def register_routes(app) -> None:
             flash("Idea captured.")
         return redirect(url_for("ideas"))
 
+    @app.get("/ideas/<int:idea_id>")
+    def edit_idea(idea_id):
+        idea = get_db().execute("SELECT * FROM ideas WHERE id = ?", (idea_id,)).fetchone()
+        if idea is None:
+            abort(404)
+        return render_template("idea_edit.html", idea=idea)
+
+    @app.post("/ideas/<int:idea_id>/update")
+    def update_idea(idea_id):
+        db = get_db()
+        if db.execute("SELECT 1 FROM ideas WHERE id = ?", (idea_id,)).fetchone() is None:
+            abort(404)
+        content = request.form.get("content", "").strip()
+        if not content:
+            flash("Idea cannot be empty.")
+            return redirect(url_for("edit_idea", idea_id=idea_id))
+        db.execute("UPDATE ideas SET content = ? WHERE id = ?", (content, idea_id))
+        db.commit()
+        flash("Idea updated.")
+        return redirect(url_for("edit_idea", idea_id=idea_id))
+
     @app.post("/ideas/delete/<int:idea_id>")
     def delete_idea(idea_id):
         db = get_db()
-        db.execute("DELETE FROM ideas WHERE id = ?", (idea_id,))
+        deleted = db.execute("DELETE FROM ideas WHERE id = ?", (idea_id,))
+        if deleted.rowcount == 0:
+            abort(404)
         db.commit()
         flash("Idea deleted.")
         return redirect(url_for("ideas"))

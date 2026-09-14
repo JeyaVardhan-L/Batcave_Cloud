@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block title %}Batcave — Edit Idea{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <p class="eyebrow">CAPTURE</p>
+        <h1>Edit Idea</h1>
+        <p>Captured {{ idea["created_at"] }}</p>
+    </div>
+</div>
+
+<section class="panel idea-editor-panel">
+    <form action="{{ url_for('update_idea', idea_id=idea['id']) }}" method="POST" class="stack-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <textarea name="content" rows="12" required aria-label="Idea content">{{ idea["content"] }}</textarea>
+        <div class="editor-actions">
+            <button class="button">Save Changes</button>
+            <a class="button secondary" href="{{ url_for('ideas') }}">Cancel</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

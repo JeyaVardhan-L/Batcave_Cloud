@@ -3,86 +3,51 @@
 {% block title %}Batcave — Ideas{% endblock %}
 
 {% block content %}
-
 <div class="page-header">
-
     <div>
         <p class="eyebrow">CAPTURE</p>
         <h1>Ideas</h1>
         <p>Quickly capture things worth remembering.</p>
     </div>
-
 </div>
 
-
 <section class="panel">
-
-    <form
-        action="{{ url_for('create_idea') }}"
-        method="POST"
-        class="stack-form"
-    >
-
+    <form action="{{ url_for('create_idea') }}" method="POST" class="stack-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-        <textarea
-            name="content"
-            placeholder="I have an idea..."
-            rows="4"
-            required
-        ></textarea>
-
-        <button class="button">
-            Capture Idea
-        </button>
-
+        <textarea name="content" placeholder="I have an idea..." rows="4" required></textarea>
+        <button class="button">Capture Idea</button>
     </form>
-
 </section>
 
+<form action="{{ url_for('ideas') }}" method="GET" class="ideas-search">
+    <input type="search" name="q" value="{{ search_query }}" placeholder="Search ideas" aria-label="Search ideas">
+    <button class="button">Search</button>
+    {% if search_query %}
+        <a class="button secondary" href="{{ url_for('ideas') }}">Clear</a>
+    {% endif %}
+</form>
+
+{% if search_query %}
+    <p class="search-status">Search results for “{{ search_query }}”.</p>
+{% endif %}
 
 <section class="idea-list">
-
     {% for idea in ideas %}
-
     <article class="idea-card">
-
-        <div class="idea-content">
-            {{ idea["content"] }}
-        </div>
-
+        <a class="idea-content idea-content-link" href="{{ url_for('edit_idea', idea_id=idea['id']) }}">{{ idea["content"] }}</a>
         <div class="idea-footer">
-
-            <small>
-                {{ idea["created_at"] }}
-            </small>
-
-
-            <form
-                action="{{ url_for('delete_idea', idea_id=idea['id']) }}"
-                method="POST"
-            >
-
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                <button class="small-button danger">
-                    Delete
-                </button>
-
-            </form>
-
+            <small>{{ idea["created_at"] }}</small>
+            <div class="idea-actions">
+                <a class="small-button secondary" href="{{ url_for('edit_idea', idea_id=idea['id']) }}">Edit</a>
+                <form action="{{ url_for('delete_idea', idea_id=idea['id']) }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="small-button danger">Delete</button>
+                </form>
+            </div>
         </div>
-
     </article>
-
     {% else %}
-
-    <div class="empty">
-        No ideas captured yet.
-    </div>
-
+    <div class="empty">{% if search_query %}No matching ideas were found.{% else %}No ideas captured yet.{% endif %}</div>
     {% endfor %}
-
 </section>
-
 {% endblock %}
