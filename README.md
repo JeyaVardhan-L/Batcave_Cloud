@@ -62,3 +62,6 @@ metadata, and a filesystem storage summary.
 
 Notes v0.4.1 adds editing and search while keeping notes private to the local
 authenticated workspace.
+
+Ideas v0.4.2 adds editing and search while keeping quick-capture lightweight
+and ordered by newest first.

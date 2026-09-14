@@ -329,11 +329,11 @@ def register_routes(app) -> None:
         db = get_db()
         if search_query:
             ideas_list = db.execute(
-                "SELECT * FROM ideas WHERE content LIKE ? COLLATE NOCASE ORDER BY created_at DESC",
+                "SELECT * FROM ideas WHERE content LIKE ? COLLATE NOCASE ORDER BY created_at DESC, id DESC",
                 (f"%{search_query}%",),
             ).fetchall()
         else:
-            ideas_list = db.execute("SELECT * FROM ideas ORDER BY created_at DESC").fetchall()
+            ideas_list = db.execute("SELECT * FROM ideas ORDER BY created_at DESC, id DESC").fetchall()
         return render_template("ideas.html", ideas=ideas_list, search_query=search_query)
 
     @app.post("/ideas/create")

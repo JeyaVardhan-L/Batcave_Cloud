@@ -458,7 +458,9 @@ textarea {
 
 
 .notes-search,
+.ideas-search,
 .note-actions,
+.idea-actions,
 .editor-actions {
     display: flex;
     align-items: center;
@@ -467,38 +469,45 @@ textarea {
 }
 
 
-.notes-search {
+.notes-search,
+.ideas-search {
     margin: 0 0 16px;
 }
 
 
-.notes-search input {
+.notes-search input,
+.ideas-search input {
     min-width: min(100%, 280px);
 }
 
 
-.note-actions form {
+.note-actions form,
+.idea-actions form {
     margin: 0;
 }
 
 
-.note-title-link {
+.note-title-link,
+.idea-content-link {
     overflow-wrap: anywhere;
 }
 
 
-.note-title-link:hover {
+.note-title-link:hover,
+.idea-content-link:hover {
     color: var(--accent-hover);
 }
 
 
-.note-editor-panel {
+.note-editor-panel,
+.idea-editor-panel {
     max-width: 900px;
 }
 
 
 @media (max-width: 800px) {
-    .notes-search input {
+    .notes-search input,
+    .ideas-search input {
         flex: 1;
     }
 }
@@ -514,6 +523,8 @@ textarea {
 
 
 .idea-content {
+    display: block;
+
     white-space: pre-wrap;
 
     line-height: 1.6;

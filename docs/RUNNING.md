@@ -89,6 +89,12 @@ Notes can be opened for editing, saved without changing their creation time, and
 searched by title or content. Notes search is available from the Notes page and
 returns results ordered by most recently updated.
 
+## Ideas v0.4.2
+
+Ideas can be opened for editing, saved without changing their creation time, and
+searched by content. Ideas search is available from the Ideas page and returns
+results ordered newest-first.
+
 ## Security status and limitations
 
 This is intended for a trusted LAN only. It has no HTTPS, public-internet
