@@ -5,16 +5,22 @@ BatCave/
 *.pem
 .env
 .env.*
+*.env
 
 # Python
 
 __pycache__/
 *.pyc
+*.pyo
 .venv/
+.pytest_cache/
 .pytest_tmp/
 .pytest_cache_new/
 .pytest_clean/
 
-# Local development
+# Local development & OS
 
 .vscode/
+.idea/
+.DS_Store
+Thumbs.db

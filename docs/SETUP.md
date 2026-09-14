@@ -1,471 +1,251 @@
-# Batcave Cloud — Initial Setup
+# Batcave Cloud — Setup & Reproduction Guide
 
-## 1. Project
-
-**Batcave Cloud** is a personal cloud-storage and self-hosted infrastructure project built around an unused Samsung Galaxy Tab S6 Lite.
-
-The goal is to turn the tablet into an always-on personal server that can be accessed securely from anywhere.
-
-The project is also a hands-on learning project for Linux, networking, Git, server administration, web development, and security.
+This guide explains how to reproduce Batcave Cloud (v0.4.3) from scratch on **Windows**, **Linux**, **macOS**, and **Android (Termux)**. It also preserves the historical hardware documentation of the original deployment on an Android tablet.
 
 ---
 
-## 2. Hardware
+## Part 1: Quick Reproduction Guide (Any Platform)
 
-- Device: Samsung Galaxy Tab S6 Lite
-- Model: SM-P615
-- Storage: 64 GB internal storage
-- microSD: None
-- Network: Home Wi-Fi
-- Router: Airtel Black
-- Display: Broken, but tablet remains functional
-- Approximate free storage at setup: 39 GB
+Follow these steps on a fresh system to clone and run Batcave Cloud.
 
-The tablet remains usable despite the broken screen and is intended to stay powered and connected to home Wi-Fi as the Batcave Cloud server.
+### 1. Prerequisites
+- **Python**: Version 3.10 or newer (tested up to Python 3.14).
+- **Git**: Installed and available on your system path.
 
----
-
-## 3. Software Environment
-
-- Android: 13
-- One UI: 5.1.1
-- Kernel: 4.14.113
-- CPU architecture: aarch64
-- Termux: Installed from F-Droid
-
-### Architecture decision
-
-The first version will **not root or replace Android**.
-
-Instead, Android remains the host operating system and Termux provides a Linux userspace in which server software can run.
-
-Conceptually:
-
-```text
-Android 13
-    |
-    +-- Termux
-          |
-          +-- Linux userspace
-          +-- SSH
-          +-- Server software
-          +-- Git
-          +-- Batcave Cloud application
+### 2. Clone the Repository
+```bash
+git clone https://github.com/JeyaVardhan-L/Batcave_Cloud.git
+cd Batcave_Cloud
 ```
 
-This approach keeps the tablet usable while allowing the project to explore Linux and server administration.
+### 3. Create Virtual Environment & Install Dependencies
+Create a Python virtual environment to avoid installing packages into your global system Python.
 
----
+- **Linux / macOS / Termux**:
+  ```bash
+  python3 -m venv .venv
+  source .venv/bin/activate
+  pip install -r requirements-dev.txt
+  ```
 
-## 4. Initial Termux Setup
+- **Windows (PowerShell)**:
+  ```powershell
+  python -m venv .venv
+  .\.venv\Scripts\Activate.ps1
+  pip install -r requirements-dev.txt
+  ```
 
-Termux packages were updated using:
+*(Note: If you only plan to run the server and not execute tests, you can install `requirements.txt` instead of `requirements-dev.txt`.)*
+
+### 4. Generate Private Configuration
+Batcave Cloud refuses to boot without a secret key and password hash. Generate a private configuration file outside the repository:
+
+- **Linux / macOS / Termux**:
+  ```bash
+  python -m server.manage create-config --output ~/.config/batcave-cloud/batcave.env
+  export BATCAVE_CONFIG_FILE=~/.config/batcave-cloud/batcave.env
+  ```
+
+- **Windows (PowerShell)**:
+  ```powershell
+  python -m server.manage create-config --output "$HOME\.config\batcave-cloud\batcave.env"
+  $env:BATCAVE_CONFIG_FILE = "$HOME\.config\batcave-cloud\batcave.env"
+  ```
+
+When prompted, enter a password for your single-user workspace.
+
+### 5. Configure Storage Location (Non-Android Systems)
+By default, `BATCAVE_DATA_ROOT` points to `/storage/emulated/0/BatCave` (the Android shared storage path). On other operating systems, set this variable to a local directory of your choice:
+
+- **Linux / macOS**:
+  ```bash
+  export BATCAVE_DATA_ROOT=~/BatCave
+  ```
+
+- **Windows (PowerShell)**:
+  ```powershell
+  $env:BATCAVE_DATA_ROOT = "$HOME\BatCave"
+  ```
+
+Batcave Cloud will automatically create the storage root and its subdirectories (`files`, `photos`, `notes`, `ideas`, `projects`, `backups`, `archive`) upon startup.
+
+### 6. Run Automated Tests
+Verify that your local environment is functioning correctly by running the test suite:
 
 ```bash
-pkg update
-pkg upgrade
+python -m pytest -q
 ```
+Expected result: `51 passed`.
 
-Android shared-storage access was enabled using:
-
+### 7. Start the Server
 ```bash
-termux-setup-storage
+python -m server.app
 ```
 
-Termux exposes Android shared storage through:
+The server binds by default to `0.0.0.0:8080`. Open your browser and navigate to:
+- Locally: `http://localhost:8080` (or `http://127.0.0.1:8080`)
+- Over LAN: `http://<server-ip>:8080`
 
-```text
-~/storage/shared
-```
-
-which points to:
-
-```text
-/storage/emulated/0
-```
-
-The tablet's user-data partition reports approximately:
-
-```text
-52 GB total
-39 GB available
-```
-
-The 100%-used system partitions shown by `df -h` are Android system/read-only partitions and are separate from the user storage available to Batcave Cloud.
+Log in using the password you configured in Step 4.
 
 ---
 
-## 5. Bat Cave Storage Structure
+## Part 2: Platform-Specific Guides
 
-Personal data is deliberately kept **outside the Git repository**.
+### Windows (PowerShell)
 
-Current structure:
+1. Open PowerShell and navigate to your projects directory:
+   ```powershell
+   git clone https://github.com/JeyaVardhan-L/Batcave_Cloud.git
+   cd Batcave_Cloud
+   ```
+2. Create and activate a virtual environment:
+   ```powershell
+   python -m venv .venv
+   .\.venv\Scripts\Activate.ps1
+   ```
+   *(If script execution is disabled, run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` first.)*
+3. Install dependencies:
+   ```powershell
+   .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+   ```
+4. Create your private configuration:
+   ```powershell
+   .\.venv\Scripts\python.exe -m server.manage create-config --output "$HOME\.config\batcave-cloud\batcave.env"
+   ```
+5. Set environment variables and run:
+   ```powershell
+   $env:BATCAVE_CONFIG_FILE = "$HOME\.config\batcave-cloud\batcave.env"
+   $env:BATCAVE_DATA_ROOT = "$HOME\BatCave"
+   .\.venv\Scripts\python.exe -m server.app
+   ```
 
-```text
-/storage/emulated/0/BatCave/
-├── files/
-├── photos/
-├── notes/
-├── ideas/
-├── projects/
-├── backups/
-└── archive/
-```
+### Linux (Debian, Ubuntu, Arch, Fedora)
 
-Repository and personal data are intentionally separated:
+1. Ensure Python 3 and venv are installed:
+   ```bash
+   # Debian / Ubuntu
+   sudo apt update && sudo apt install -y python3 python3-venv git
+   ```
+2. Clone and set up:
+   ```bash
+   git clone https://github.com/JeyaVardhan-L/Batcave_Cloud.git
+   cd Batcave_Cloud
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements-dev.txt
+   ```
+3. Generate config and run:
+   ```bash
+   python -m server.manage create-config --output ~/.config/batcave-cloud/batcave.env
+   export BATCAVE_CONFIG_FILE=~/.config/batcave-cloud/batcave.env
+   export BATCAVE_DATA_ROOT=~/BatCave
+   python -m server.app
+   ```
 
-```text
-~/Batcave_Cloud/              # Code + documentation
-/storage/emulated/0/BatCave/  # Personal data
-```
+### macOS (Apple Silicon & Intel)
 
-Personal files must never be committed to GitHub.
+1. Ensure Xcode Command Line Tools are installed:
+   ```bash
+   xcode-select --install
+   ```
+2. Clone and set up:
+   ```bash
+   git clone https://github.com/JeyaVardhan-L/Batcave_Cloud.git
+   cd Batcave_Cloud
+   python3 -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements-dev.txt
+   ```
+3. Generate config and run:
+   ```bash
+   python -m server.manage create-config --output ~/.config/batcave-cloud/batcave.env
+   export BATCAVE_CONFIG_FILE=~/.config/batcave-cloud/batcave.env
+   export BATCAVE_DATA_ROOT=~/BatCave
+   python -m server.app
+   ```
 
----
+### Android (Termux)
 
-## 6. Android Server Preparation
+Batcave Cloud was originally created and hosted on an Android device running Termux.
 
-Termux was configured with:
-
-- Battery usage: **Unrestricted**
-- Developer Options: **Stay awake enabled**
-- Developer Options: **Don't keep activities disabled**
-
-The Termux wake-lock capability was tested using:
-
-```bash
-termux-wake-lock
-```
-
-A background execution test was performed:
-
-```bash
-sleep 60 && echo "BATCAVE STILL ALIVE"
-```
-
-The tablet successfully printed:
-
-```text
-BATCAVE STILL ALIVE
-```
-
-after the screen had been turned off.
-
-This demonstrated that Termux could continue executing a process while the display was off.
-
-### Reliability note
-
-The tablet experienced two unexpected shutdowns during initial setup while under relatively high interactive load. It recovered normally after a force restart. The device has also demonstrated that it can remain operational for extended periods under normal use.
-
-Because Batcave Cloud is intended to be an always-on server, long-duration stability and thermal/power behavior will be tested before the system is trusted with important data.
-
----
-
-## 7. SSH Administration
-
-OpenSSH was installed in Termux:
-
-```bash
-pkg install openssh
-```
-
-The SSH server was started using:
-
-```bash
-sshd
-```
-
-Termux SSH uses port **8022**.
-
-The tablet's local Wi-Fi address during setup was:
-
-```text
-192.168.1.18
-```
-
-An SSH password was configured using:
-
-```bash
-passwd
-```
-
-The Windows PC successfully connected to the tablet using:
-
-```bash
-ssh -p 8022 u0_a243@192.168.1.18
-```
-
-This established remote administration over the home Wi-Fi network:
-
-```text
-Windows PC
-    |
-    | SSH :8022
-    v
-Airtel Black Router
-    |
-    | Wi-Fi
-    v
-Galaxy Tab S6 Lite
-    |
-    v
-Termux
-```
-
-The Termux username is:
-
-```text
-u0_a243
-```
-
----
-
-## 8. Git Setup
-
-Git was installed in Termux.
-
-Git identity was configured as:
-
-```text
-Name:  JeyaVardhan-L
-Email:  GitHub noreply address
-```
-
-The GitHub repository is:
-
-```text
-JeyaVardhan-L/Batcave_Cloud
-```
-
-The repository was cloned onto the tablet using SSH:
-
-```bash
-git clone git@github.com:JeyaVardhan-L/Batcave_Cloud.git
-```
-
-The repository was initially empty, which was expected.
+1. **Install Termux**:
+   - Install **Termux from F-Droid** (do NOT use the obsolete Google Play Store build).
+2. **Update Termux & Install Base Packages**:
+   ```bash
+   pkg update && pkg upgrade -y
+   pkg install -y python git openssh libjpeg-turbo
+   ```
+   *(Note: `libjpeg-turbo` is required for Pillow to compile or load JPEG support on aarch64 Android).*
+3. **Grant Storage Access**:
+   ```bash
+   termux-setup-storage
+   ```
+   This links Android shared storage to `~/storage/shared`, which points to `/storage/emulated/0`.
+4. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/JeyaVardhan-L/Batcave_Cloud.git ~/Batcave_Cloud
+   cd ~/Batcave_Cloud
+   ```
+5. **Set Up Python Virtual Environment**:
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate
+   pip install -r requirements-dev.txt
+   ```
+6. **Generate Configuration**:
+   ```bash
+   python -m server.manage create-config --output ~/.config/batcave-cloud/batcave.env
+   export BATCAVE_CONFIG_FILE=~/.config/batcave-cloud/batcave.env
+   ```
+   *(On Android/Termux, `BATCAVE_DATA_ROOT` defaults to `/storage/emulated/0/BatCave`, keeping user files in shared storage accessible by other Android apps).*
+7. **Keep Termux Running in Background**:
+   To prevent Android's battery optimizer from killing the server when the screen is turned off:
+   - Disable Android battery optimizations for Termux (`Settings > Apps > Termux > Battery > Unrestricted`).
+   - Acquire a Termux wake-lock before running:
+     ```bash
+     termux-wake-lock
+     ```
+8. **Start the Server**:
+   ```bash
+   python -m server.app
+   ```
+9. **Access from Android Browser**:
+   Open Chrome or Firefox on the tablet and visit:
+   ```text
+   http://localhost:8080
+   ```
+   To access it from other computers or phones on the same Wi-Fi network, find the tablet's local IP address (`ip addr show wlan0` or `ifconfig`) and open `http://<tablet-ip>:8080`.
 
 ---
 
-## 9. GitHub SSH Authentication
+## Part 3: Historical Hardware Notes (The Original Batcave Server)
 
-An ED25519 SSH key was generated on the tablet:
+Batcave Cloud was originally conceptualized and deployed on a repurposed tablet. The original physical hardware notes are documented below for historical and engineering context.
 
-```bash
-ssh-keygen -t ed25519 -C "GitHub noreply address"
-```
+### Original Hardware Profile
+- **Device**: Samsung Galaxy Tab S6 Lite
+- **Model**: SM-P615 (LTE / Wi-Fi)
+- **CPU**: Samsung Exynos 9611 (8 cores, ARM Cortex-A73 / Cortex-A53, `aarch64`)
+- **RAM**: 4 GB
+- **Internal Storage**: 64 GB internal flash storage
+- **Operating System**: Android 13 / One UI 5.1.1 (Linux Kernel 4.14.113)
+- **Physical Condition**: Broken LCD screen, but touch, digitizer, battery, Wi-Fi, and processor remained fully functional.
+- **Network**: Connected continuously to home Wi-Fi via an Airtel Black router.
 
-The **public key** was added to GitHub as an authentication key.
-
-GitHub authentication from the tablet was successfully verified with:
-
-```bash
-ssh -T git@github.com
-```
-
-GitHub responded with a successful authentication message.
-
-The private SSH key remains on the tablet and must never be committed, uploaded, or shared.
-
----
-
-## 10. Repository Structure
-
-The initial repository structure is:
-
-```text
-Batcave_Cloud/
-├── .git/
-├── .gitignore
-├── README.md
-├── docs/
-├── scripts/
-├── server/
-└── web/
-```
-
-Purpose:
-
-- `docs/` — architecture, setup, networking, security, troubleshooting, and learning documentation
-- `scripts/` — automation and maintenance scripts
-- `server/` — backend/server software
-- `web/` — web interface
-- `README.md` — project overview
-- `.gitignore` — protection against accidentally tracking secrets or personal data
-
----
-
-## 11. Git Safety
-
-The initial `.gitignore` contains:
-
-```gitignore
-# Personal Bat Cave data
-
-BatCave/
-*.key
-*.pem
-.env
-.env.*
-```
-
-The actual personal storage directory is outside the repository, but the ignore rule provides an additional safety layer.
-
-Credentials, private keys, environment files, and personal Bat Cave data must not be committed to GitHub.
-
----
-
-## 12. Current Architecture
-
-The initial target architecture is:
-
-```text
-                         INTERNET
-                             |
-                    Secure remote access
-                             |
-                             v
-                    Home Airtel Router
-                             |
-                            Wi-Fi
-                             |
-                             v
-                 Samsung Galaxy Tab S6 Lite
-                             |
-                          Android
-                             |
-                          Termux
-                         /                             SSH      Server
-                        |          |
-                     Admin    Batcave Cloud
-                                   |
-                           Personal Storage
-                                   |
-                  /storage/emulated/0/BatCave
-```
-
-Remote access will eventually be provided through a secure mechanism such as a VPN or outbound tunnel rather than directly exposing the tablet's SSH/server ports to the public internet.
-
----
-
-## 13. Completed Milestones
-
-- [x] Tablet selected
-- [x] Hardware/software environment inspected
-- [x] Termux installed from F-Droid
-- [x] Termux packages updated
-- [x] Android shared-storage access configured
-- [x] Approximately 39 GB free storage confirmed
-- [x] BatCave storage directories created
-- [x] Termux battery usage set to Unrestricted
-- [x] Stay awake enabled
-- [x] Don't keep activities disabled
-- [x] Wake-lock tested successfully
-- [x] OpenSSH installed
-- [x] SSH server started
-- [x] Windows-to-tablet SSH access tested successfully
-- [x] Git installed
-- [x] Git identity configured
-- [x] GitHub ED25519 authentication configured
-- [x] GitHub SSH authentication verified
-- [x] Batcave_Cloud repository cloned to tablet
-- [x] Initial repository structure created
-- [x] Initial Git safety rules created
-
----
-
-## 14. Next Objectives
-
-### Phase 1 — Reliable server foundation
-
-1. Make Termux and required services start reliably after reboot.
-2. Improve Android power-management configuration.
-3. Verify long-duration stability.
-4. Establish basic monitoring and health checks.
-
-### Phase 2 — Local Batcave Cloud server
-
-1. Choose the backend architecture.
-2. Build a minimal local web server.
-3. Implement file listing.
-4. Implement file upload/download.
-5. Connect the application to the BatCave storage directory.
-
-### Phase 3 — Web interface
-
-Target sections include:
-
-- Photos
-- Files
-- Notes
-- Ideas
-- Projects
-- Backups
-- Archive
-
-Future features may include search, previews, metadata, storage statistics, and mobile-friendly access.
-
-### Phase 4 — Security and remote access
-
-1. Authentication and authorization
-2. HTTPS
-3. Secure remote connectivity
-4. Minimize exposed services
-5. Secrets management
-6. Access logging
-7. Backup and recovery strategy
-
-### Phase 5 — Automation and reliability
-
-Potential future features:
-
-- Automatic phone photo backup
-- Scheduled backups
-- Storage monitoring
-- Health monitoring
-- Automatic service restart
-- Notifications
-- Database/indexing if needed
-
----
-
-## 15. Engineering Principles
-
-Batcave Cloud is being built incrementally.
-
-The goal is not to blindly copy commands or deploy a black-box application. Each major component should be understood before it is automated.
-
-The project is intended to provide practical experience with:
-
-- Linux
-- Android/Linux interaction
-- Shell
-- Git and GitHub
-- SSH
-- Networking
-- HTTP/HTTPS
-- Web development
-- Authentication
-- Security
-- Storage management
-- Backups
-- System reliability
-- Server administration
-
-The repository should document both **what was built** and **why it was built that way**.
-
----
-
-## 16. Important Security Rule
-
-The Batcave contains personal data.
-
-Before exposing it to the internet, the project must have:
-
-1. Strong authentication
-2. Encrypted transport
-3. A deliberate remote-access architecture
-4. A backup strategy
-5. A recovery plan
-
-**The Batcave should never be made publicly accessible just to make the first demo work.**
+### Original Architectural Decisions
+1. **No Rooting Required**: Android was kept intact as the base operating system. Termux provided the userspace Linux environment without voiding Knox or modifying device partitions.
+2. **Storage Separation**:
+   - Code & Git repository resided inside Termux private storage: `~/Batcave_Cloud/`.
+   - Personal user data resided on Android shared storage: `/storage/emulated/0/BatCave/`.
+   - This separation ensured that git commands never tracked personal files or photos.
+3. **Remote Administration over SSH**:
+   - OpenSSH server was run inside Termux on port `8022`.
+   - The primary development machine (a Windows PC) administered the tablet remotely:
+     ```bash
+     ssh -p 8022 u0_a243@192.168.1.18
+     ```
+   - ED25519 SSH keys were used for GitHub authentication.
+4. **Thermal & Stability Testing**:
+   - Tested continuous execution using `termux-wake-lock` and verified background execution while the display was powered down.
+   - Long-duration testing verified that the Exynos processor stayed cool and stable under normal Flask HTTP workloads.
