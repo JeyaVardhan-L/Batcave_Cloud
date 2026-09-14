@@ -65,3 +65,6 @@ authenticated workspace.
 
 Ideas v0.4.2 adds editing and search while keeping quick-capture lightweight
 and ordered by newest first.
+
+Projects v0.4.3 adds project editing, detail views, and safe project folder
+navigation while preserving project directory retention on delete.

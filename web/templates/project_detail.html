@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Batcave — {{ project["name"] }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <p class="eyebrow">BUILD</p>
+        <h1>{{ project["name"] }}</h1>
+        <p>Created {{ project["created_at"] }}</p>
+    </div>
+</div>
+
+<section class="panel project-editor-panel">
+    <div class="project-meta-bar">
+        <div class="project-meta-items">
+            <span class="status">{{ project["status"] }}</span>
+            {% if project["folder_name"] and has_folder %}
+                <a class="button secondary" href="{{ url_for('project_folder', project_id=project['id']) }}">Open Project Folder ({{ project["folder_name"] }})</a>
+            {% elif project["folder_name"] %}
+                <span class="folder-unavailable">Folder unavailable ({{ project["folder_name"] }})</span>
+            {% else %}
+                <span class="folder-unavailable">No folder assigned</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <form action="{{ url_for('update_project', project_id=project['id']) }}" method="POST" class="stack-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="project-name"><strong>Project Name</strong></label>
+        <input id="project-name" type="text" name="name" value="{{ project['name'] }}" required aria-label="Project name">
+        <label for="project-description"><strong>Description</strong></label>
+        <textarea id="project-description" name="description" rows="6" aria-label="Project description">{{ project["description"] }}</textarea>
+        <div class="editor-actions">
+            <button class="button">Save Changes</button>
+            <a class="button secondary" href="{{ url_for('projects') }}">Cancel</a>
+        </div>
+    </form>
+</section>
+
+<section class="panel project-editor-panel">
+    <h2>Project Status</h2>
+    <form action="{{ url_for('change_project_status', project_id=project['id']) }}" method="POST" class="inline-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ url_for('project_detail', project_id=project['id']) }}">
+        <select name="status" aria-label="Project status">
+            <option value="Active" {% if project["status"] == "Active" %}selected{% endif %}>Active</option>
+            <option value="Paused" {% if project["status"] == "Paused" %}selected{% endif %}>Paused</option>
+            <option value="Archived" {% if project["status"] == "Archived" %}selected{% endif %}>Archived</option>
+        </select>
+        <button class="small-button">Update Status</button>
+    </form>
+</section>
+{% endblock %}

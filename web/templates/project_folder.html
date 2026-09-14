@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Batcave — {{ project["name"] }} Folder{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <p class="eyebrow">BUILD</p>
+        <h1>{{ project["name"] }} Folder</h1>
+        <p>Folder: projects/{{ folder_name }}</p>
+    </div>
+</div>
+
+<div class="toolbar">
+    <a href="{{ url_for('project_detail', project_id=project['id']) }}" class="button secondary">← Back to Project</a>
+    <a href="{{ url_for('projects') }}" class="button secondary">All Projects</a>
+</div>
+
+<section class="panel">
+    <h2>Project Files</h2>
+    {% if folders or files %}
+        <div class="file-list-panel">
+            {% for folder in folders %}
+            <div class="file-row">
+                <div class="file-info">
+                    <span class="file-icon">📁</span>
+                    <strong>{{ folder.name }}</strong>
+                </div>
+            </div>
+            {% endfor %}
+            {% for file in files %}
+            <div class="file-row">
+                <div class="file-info">
+                    <span class="file-icon">📄</span>
+                    <div>
+                        <strong>{{ file.name }}</strong>
+                        <small>{{ file.size }} · {{ file.modified }}</small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty">
+            This project folder is empty.
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

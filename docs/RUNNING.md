@@ -95,6 +95,14 @@ Ideas can be opened for editing, saved without changing their creation time, and
 searched by content. Ideas search is available from the Ideas page and returns
 results ordered newest-first.
 
+## Projects v0.4.3
+
+Projects can be opened for editing their name and description, and their linked
+storage folder can be safely navigated. If a project folder is absent or a legacy
+project has no assigned folder, it is shown as unavailable without creating
+unintended directories. Project deletion continues to preserve its filesystem
+folder.
+
 ## Security status and limitations
 
 This is intended for a trusted LAN only. It has no HTTPS, public-internet

@@ -488,20 +488,44 @@ textarea {
 
 
 .note-title-link,
-.idea-content-link {
+.idea-content-link,
+.project-title-link {
     overflow-wrap: anywhere;
 }
 
 
 .note-title-link:hover,
-.idea-content-link:hover {
+.idea-content-link:hover,
+.project-title-link:hover {
     color: var(--accent-hover);
 }
 
 
 .note-editor-panel,
-.idea-editor-panel {
+.idea-editor-panel,
+.project-editor-panel {
     max-width: 900px;
+}
+
+
+.project-meta-bar {
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+}
+
+
+.project-meta-items {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+
+.folder-unavailable {
+    color: var(--muted);
+    font-size: 0.85rem;
 }
 
 

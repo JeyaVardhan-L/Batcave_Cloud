@@ -34,6 +34,8 @@
             required
         >
 
+
+
         <textarea
             name="description"
             placeholder="What is this project?"
@@ -50,93 +52,50 @@
 
 
 <section class="project-grid">
-
     {% for project in projects %}
-
     <article class="project-card">
-
         <div class="project-header">
-
             <div>
-                <h2>{{ project["name"] }}</h2>
-
-                <span class="status">
-                    {{ project["status"] }}
-                </span>
+                <h2><a class="project-title-link" href="{{ url_for('project_detail', project_id=project['id']) }}">{{ project["name"] }}</a></h2>
+                <small>{{ project["created_at"] }}</small>
             </div>
-
+            <span class="status">
+                {{ project["status"] }}
+            </span>
         </div>
-
 
         <p>
             {{ project["description"] }}
         </p>
 
-
         <div class="project-controls">
+            <a class="small-button secondary" href="{{ url_for('project_detail', project_id=project['id']) }}">Edit</a>
+            {% if project["folder_name"] %}
+                <a class="small-button secondary" href="{{ url_for('project_folder', project_id=project['id']) }}">Folder</a>
+            {% else %}
+                <small class="muted">No folder</small>
+            {% endif %}
 
-            <form
-                action="{{ url_for('change_project_status', project_id=project['id']) }}"
-                method="POST"
-            >
-
+            <form action="{{ url_for('change_project_status', project_id=project['id']) }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                <select name="status">
-
-                    <option
-                        value="Active"
-                        {% if project["status"] == "Active" %}selected{% endif %}
-                    >
-                        Active
-                    </option>
-
-                    <option
-                        value="Paused"
-                        {% if project["status"] == "Paused" %}selected{% endif %}
-                    >
-                        Paused
-                    </option>
-
-                    <option
-                        value="Archived"
-                        {% if project["status"] == "Archived" %}selected{% endif %}
-                    >
-                        Archived
-                    </option>
-
+                <select name="status" aria-label="Project status">
+                    <option value="Active" {% if project["status"] == "Active" %}selected{% endif %}>Active</option>
+                    <option value="Paused" {% if project["status"] == "Paused" %}selected{% endif %}>Paused</option>
+                    <option value="Archived" {% if project["status"] == "Archived" %}selected{% endif %}>Archived</option>
                 </select>
-
-                <button class="small-button">
-                    Update
-                </button>
-
+                <button class="small-button">Update</button>
             </form>
 
-
-            <form
-                action="{{ url_for('delete_project', project_id=project['id']) }}"
-                method="POST"
-            >
-
+            <form action="{{ url_for('delete_project', project_id=project['id']) }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                <button class="small-button danger">
-                    Delete
-                </button>
-
+                <button class="small-button danger">Delete</button>
             </form>
-
         </div>
-
     </article>
-
     {% else %}
-
     <div class="empty">
         No projects yet.
     </div>
-
     {% endfor %}
 
 </section>

@@ -403,20 +403,82 @@ def register_routes(app) -> None:
             flash("Project record was created, but its folder could not be created.")
         return redirect(url_for("projects"))
 
+    @app.get("/projects/<int:project_id>")
+    def project_detail(project_id):
+        project = get_db().execute("SELECT * FROM projects WHERE id = ?", (project_id,)).fetchone()
+        if project is None:
+            abort(404)
+        has_folder = False
+        if project["folder_name"]:
+            try:
+                folder = resolve_path(_root("projects"), project["folder_name"], allow_root=False)
+                has_folder = folder.is_dir()
+            except (InvalidPathError, ValueError):
+                has_folder = False
+        return render_template("project_detail.html", project=project, has_folder=has_folder)
+
+    @app.post("/projects/<int:project_id>/update")
+    def update_project(project_id):
+        db = get_db()
+        if db.execute("SELECT 1 FROM projects WHERE id = ?", (project_id,)).fetchone() is None:
+            abort(404)
+        name = request.form.get("name", "").strip()
+        description = request.form.get("description", "").strip()
+        if not name:
+            flash("Project name is required.")
+            return redirect(url_for("project_detail", project_id=project_id))
+        db.execute("UPDATE projects SET name = ?, description = ? WHERE id = ?", (name, description, project_id))
+        db.commit()
+        flash("Project updated.")
+        return redirect(url_for("project_detail", project_id=project_id))
+
+    @app.get("/projects/<int:project_id>/folder")
+    def project_folder(project_id):
+        project = get_db().execute("SELECT * FROM projects WHERE id = ?", (project_id,)).fetchone()
+        if project is None:
+            abort(404)
+        if not project["folder_name"]:
+            abort(404)
+        root = _root("projects")
+        folder = _safe_path(root, project["folder_name"], allow_root=False)
+        if not folder.exists() or not folder.is_dir():
+            abort(404)
+
+        entries = []
+        for item in sorted(folder.iterdir(), key=lambda p: p.name.lower()):
+            entry = _safe_entry_info(root, item)
+            if entry is not None:
+                entries.append(entry)
+
+        folders_list = [item for item in entries if item["is_folder"]]
+        files_list = [item for item in entries if not item["is_folder"]]
+        return render_template(
+            "project_folder.html",
+            project=project,
+            folder_name=project["folder_name"],
+            folders=folders_list,
+            files=files_list,
+        )
+
     @app.post("/projects/status/<int:project_id>")
     def change_project_status(project_id):
         status = request.form.get("status", "Active")
         if status not in {"Active", "Paused", "Archived"}:
             abort(400)
         db = get_db()
-        db.execute("UPDATE projects SET status = ? WHERE id = ?", (status, project_id))
+        cursor = db.execute("UPDATE projects SET status = ? WHERE id = ?", (status, project_id))
+        if cursor.rowcount == 0:
+            abort(404)
         db.commit()
-        return redirect(url_for("projects"))
+        next_url = request.form.get("next")
+        return redirect(next_url or url_for("projects"))
 
     @app.post("/projects/delete/<int:project_id>")
     def delete_project(project_id):
         db = get_db()
-        db.execute("DELETE FROM projects WHERE id = ?", (project_id,))
+        deleted = db.execute("DELETE FROM projects WHERE id = ?", (project_id,))
+        if deleted.rowcount == 0:
+            abort(404)
         db.commit()
         flash("Project deleted. Its directory was retained to avoid deleting project files.")
         return redirect(url_for("projects"))
