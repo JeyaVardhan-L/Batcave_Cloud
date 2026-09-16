@@ -50,10 +50,14 @@ pip install -r requirements-dev.txt
 Batcave Cloud refuses to boot without a secret key and password hash. Generate a private local configuration outside the repository:
 
 ```bash
+# Option A: Standard default location (automatically discovered by the server):
+python -m server.manage create-config
+
+# Option B: Dedicated development configuration:
 python -m server.manage create-config --output ~/.config/batcave-cloud/batcave-dev.env
 ```
 
-Set the environment variables before running:
+If using a dedicated development configuration, set the environment variables before running:
 
 ```bash
 # Linux / macOS / Termux
@@ -96,12 +100,13 @@ addopts = --capture=sys
 This flag configures system-level standard I/O capture during test runs, preventing output buffering conflicts across diverse operating systems and shell environments.
 
 ### 3.3 Test Suite Structure
-The test suite consists of 5 modules containing 51 tests:
+The test suite consists of 6 modules containing 65 tests:
 - `tests/test_foundation.py` (11 tests): Authentication, session cookies, global CSRF enforcement, basic CRUD, root protection, path traversal defenses, upload size limits, Pillow photo validation, and security headers.
 - `tests/test_files_v03.py` (8 tests): Breadcrumbs, file metadata, sorting, recursive search, move operations (cycle detection and invalid destinations), storage usage without recursive disk walks, and route CSRF protection.
 - `tests/test_notes_v041.py` (7 tests): Note creation, editing/updating (updating `updated_at` without altering `created_at`), deletion, case-insensitive search by title/content, 404 handling, and CSRF protection.
 - `tests/test_ideas_v042.py` (11 tests): Idea creation, validation of empty content, edit views, update flow, deletion, content search (ordered newest-first), 404 handling, and CSRF protection.
 - `tests/test_projects_v043.py` (14 tests): Project creation (with automatic `project-<id>` folder provisioning), validation, detail/edit views, metadata updates, status changes (`Active`, `Paused`, `Archived`), legacy NULL folder handling, safe folder navigation, path boundary protections, deletion folder retention, and CSRF protection.
+- `tests/test_dashboard_v051.py` (14 tests): Dashboard authentication gating, workspace counts, ordering semantics, quick actions, absence of path/secret leakage, automatic config discovery, explicit precedence, and invalid config handling.
 
 ### 3.4 Test Isolation Pattern
 All tests run in complete isolation using Python's `tempfile.TemporaryDirectory()`. Tests instantiate the Flask application using `create_app({"DATA_ROOT": temp_dir, "SECRET_KEY": "...", "PASSWORD_HASH": "..."})`. No test ever touches real user data or live configuration files.
@@ -141,7 +146,7 @@ Follow this workflow for all changes:
    ├── Make focused, incremental modifications
    └── Add corresponding unit tests in tests/
 2. Run Test Suite
-   └── python -m pytest -q (Ensure all 51+ tests pass)
+   └── python -m pytest -q (Ensure all 65 tests pass)
 3. Run Syntax Check
    └── python -m compileall server tests
 4. Run Git Diff Hygiene Check

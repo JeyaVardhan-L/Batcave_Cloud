@@ -1,180 +1,85 @@
-# Batcave Cloud
+# Batcave_Cloud
 
-A self-hosted, single-user personal cloud workspace designed for Local Area Networks (LAN). Built with Python, Flask, SQLite, and vanilla web technologies, Batcave Cloud was originally created to turn an unused Android tablet into an always-on home server, and has evolved into an educational, modular personal cloud system.
+A personal self-hosted cloud and server built from scratch with Python, Flask, SQLite, and filesystem storage, designed to run on devices such as a standard Windows/Linux machine or an Android tablet running Termux.
 
-**Current Version**: `v0.5.1`
-<br>
-**Test Suite**: 65 passed (automated integration and unit tests)
+**Current Release**: `v0.5.1` &nbsp;|&nbsp; **Test Suite**: 65 passed across 6 test modules &nbsp;|&nbsp; **Scope**: Single-user private LAN workspace
 
 ---
 
-## Why Batcave Cloud?
+## Why I Built This
 
-Modern cloud storage platforms often obscure how networking, storage abstraction, authentication, and database migrations function under the hood. Batcave Cloud was created as a hands-on, end-to-end engineering learning project with two core motivations:
+Modern cloud platforms and turnkey container bundles make it easy to deploy services, but they often hide the underlying mechanics of server engineering. Batcave_Cloud was built from the ground up as a hands-on, end-to-end engineering project with several core motivations:
 
-1. **Practical Systems Engineering**: Gain direct experience building and maintaining a real Linux-based server environment—covering user isolation, filesystem sandboxing, session security, database schema evolution, and network administration.
-2. **Repurposing Surplus Hardware**: Transform an unused, screen-damaged Samsung Galaxy Tab S6 Lite (SM-P615) running Android 13 into a functional, low-power, always-on personal home server using Termux and OpenSSH.
-
-Rather than deploying a pre-packaged, black-box container or an off-the-shelf software suite, Batcave Cloud is written from scratch in Python to explore how web security primitives and storage architectures operate at a fundamental level.
-
----
-
-## What It Can Do
-
-Batcave Cloud currently provides a secure, web-based workspace with the following capabilities:
-
-### Dashboard (Command Center)
-- **Central Landing View**: Real-time overview of the entire Batcave workspace at `GET /`.
-- **Lightweight Storage Metrics**: $O(1)$ disk capacity summary (used, free, total) via `storage_usage()` without recursive filesystem walking.
-- **Aggregated Statistics**: Real counts for Notes, Ideas, and Projects (including active status).
-- **Quick Actions**: One-click workflows to create notes, capture ideas, start projects, or open the file browser.
-- **Recent Feeds**: Live chronological lists of recent notes, ideas, and active projects linking directly into editor views.
-
-### Authentication & Security
-- **Single-User Password Authentication**: Access is protected by a session-based login screen using industry-standard password hashing via Werkzeug (`scrypt`/PBKDF2).
-- **Global CSRF Protection**: Every mutating HTTP `POST` request is validated against a per-session cryptographic token using constant-time comparison.
-- **Strict Storage Confinement**: All filesystem interactions are sandboxed within a configured data root using path canonicalization (`resolve_path`) to prevent path traversal (`../../`).
-- **Upload Safety**: Filenames are sanitized via Werkzeug's `clean_name`, duplicate uploads are rejected to prevent accidental overwrites (`O_EXCL` / `xb` mode), and request sizes are bounded by a 25 MB default limit.
-- **Photo Content Validation**: Image uploads are inspected with Pillow to verify that internal image formats match their file extensions, and decompression bomb protection is enforced.
-- **Hardened HTTP Headers**: Responses include Content Security Policy (CSP), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Permissions-Policy`, and `Cache-Control: no-store` on authenticated routes.
-
-### Files Workspace
-- **Breadcrumb Navigation**: Seamless traversal across nested directory hierarchies.
-- **Metadata & Sorting**: Displays human-readable file sizes, modification timestamps, and distinct file types. Items can be sorted by name, size, or date (ascending and descending).
-- **Hierarchy Search**: Case-insensitive recursive search across all files and subdirectories.
-- **Safe Directory Operations**: Create folders, rename items, and delete empty folders or files.
-- **Safe Moves**: Move files and folders into existing target folders with cycle detection (preventing moving a directory into itself or its descendants).
-- **Filesystem Capacity**: Real-time disk capacity summary (used, free, total) via `shutil.disk_usage()` without slow recursive file walks.
-
-### Notes Workspace
-- **CRUD Operations**: Create, view, edit, update, and delete notes.
-- **Preserved History**: Editing notes updates an `updated_at` timestamp while preserving the original creation date (`created_at`).
-- **Search**: Search notes by title or content, ordered by most recently updated.
-
-### Ideas Workspace
-- **Quick-Capture Inbox**: Minimalist, single-field capture for rapid thought collection.
-- **Editing**: View and modify captured ideas while preserving initial capture timestamps.
-- **Search**: Case-insensitive text search across ideas, ordered newest-first.
-
-### Projects Workspace
-- **Project Tracking**: Manage projects with names, descriptions, and statuses (`Active`, `Paused`, `Archived`).
-- **Dedicated Folders**: Automatically provisions a dedicated directory on disk (`projects/project-<id>`) upon creation.
-- **Folder Navigation**: Safely explore and view files inside a project's folder without escaping its directory boundaries.
-- **Legacy Project Support**: Gracefully displays legacy projects that lack an associated folder (`folder_name = NULL`) without crashing or creating unintended directories.
-- **Data Retention on Deletion**: Deleting a project removes the database record while **deliberately retaining the directory on disk** to avoid catastrophic data loss.
-
-### Storage & Database
-- **SQLite Database**: Uses Write-Ahead Logging (`PRAGMA journal_mode = WAL`) and versioned additive migrations for robust concurrency and schema tracking.
-- **Clean Storage Layout**: Seven organized root folders (`files`, `photos`, `notes`, `ideas`, `projects`, `backups`, `archive`) isolated from the application code.
+- **Learning Systems & Backend Fundamentals**: Building a complete server from scratch—implementing session-based authentication, cryptographic password hashing, global CSRF defense, filesystem path sandboxing, database schema migrations, and clean HTTP routing without third-party frameworks or heavy ORMs.
+- **Understanding Architectural Boundaries**: Learning where responsibilities belong in a growing codebase—separating application factories from route controllers, isolating storage I/O from database queries, and keeping configuration strictly decoupled from source code.
+- **Repurposing Available Hardware**: Turning an unused, screen-damaged Samsung Galaxy Tab S6 Lite (SM-P615) running Android 13 into an always-on, low-power personal home server using Termux, an OpenSSH daemon, and home Wi-Fi.
+- **Deliberate Construction Over Assembly**: Choosing to build core primitives deliberately rather than stringing together a collection of black-box third-party services whose failure modes are difficult to inspect and reason about.
 
 ---
 
-## Project Evolution
+## What It Does
 
-The project developed through disciplined, test-driven iterations:
+Batcave_Cloud provides a single-user workspace accessible over a local network. All listed capabilities are fully implemented and covered by automated tests:
 
-```text
-v0.1 (Prototype)
-  └── Monolithic Flask script on Android/Termux, unauthenticated HTML/CSS UI
-v0.2 (Secure Foundation)
-  └── Modular refactor, password hashing, session login, global CSRF, storage sandbox, test suite
-v0.3 (Files Workspace)
-  └── Breadcrumbs, metadata, sorting, recursive search, safe moves, disk quota
-v0.4.1 (Notes Workspace)
-  └── Note editing, updated_at timestamps, title/content search, 404 safety
-v0.4.2 (Ideas Workspace)
-  └── Quick-capture inbox, idea editing, newest-first search
-v0.4.3 (Projects Workspace)
-  └── Project detail/edit, status gating, folder navigation, NULL folder safety, folder retention on delete
-v0.5.1 (Command Center Dashboard & Config Discovery) [Current]
-  └── Central dashboard with real-time stats and quick actions; automatic discovery of ~/.config/batcave-cloud/batcave.env
-```
-
-### v0.1 — Initial Prototype
-- **What Changed**: Set up an initial proof-of-concept on a Samsung Galaxy Tab S6 Lite running Android 13 and Termux. Created a monolithic `server/app.py` serving early HTML templates for Files, Notes, Ideas, Projects, and Photos.
-- **Why**: Proved that an unused tablet could run a persistent Python web server over home Wi-Fi and interface with Android shared storage (`/storage/emulated/0/BatCave`).
-- **Engineering Reality**: The prototype proved viable hardware execution, but lacked authentication, CSRF defense, path traversal protection, automated tests, or modular structure.
-
-### v0.2 — Secure Foundation
-- **What Changed**: Complete architectural rewrite. Split the monolithic app into focused modules (`app.py`, `config.py`, `auth.py`, `database.py`, `storage.py`, `routes.py`, `manage.py`). Added Werkzeug password hashing, session-based authentication, global CSRF gating on all POST requests, path confinement (`resolve_path`), photo validation via Pillow, security headers, and an automated test suite (`tests/test_foundation.py`).
-- **Why**: Established a secure baseline before adding advanced features. Personal data must never be exposed without authentication and input validation.
-- **Verification**: 11 automated tests introduced and passing in temporary test directories.
-
-### v0.3 — Files Workspace
-- **What Changed**: Transformed raw file listing into a capable file manager. Added clickable breadcrumbs, file metadata (formatted size, timestamp), sorting (name, size, date), recursive search (`?q=...`), safe move operations with cycle/descendant detection, and an $O(1)$ filesystem capacity summary.
-- **Why**: Provided everyday utility for managing personal files while ensuring operations could not escape storage bounds or corrupt directory hierarchies.
-- **Verification**: 8 new automated tests (`tests/test_files_v03.py`).
-
-### v0.4.1 — Notes Workspace
-- **What Changed**: Upgraded Notes from a write-only list into an editable workspace. Added `GET /notes/<id>` and `POST /notes/<id>/update`, automatic `updated_at` timestamps, case-insensitive title/content search, and robust 404 error handling.
-- **Why**: Notes require revision and searchability to be useful for daily capture and recall.
-- **Verification**: 7 new automated tests (`tests/test_notes_v041.py`).
-
-### v0.4.2 — Ideas Workspace
-- **What Changed**: Enhanced the Ideas inbox with editing (`GET /ideas/<id>`, `POST /ideas/<id>/update`) and search capabilities (`/ideas?q=...`), while intentionally preserving its minimalist, newest-first capture design.
-- **Why**: Quick thoughts require rapid retrieval and editing without the formal structure of a full note.
-- **Verification**: 11 new automated tests (`tests/test_ideas_v042.py`).
-
-### v0.4.3 — Projects Workspace
-- **What Changed**: Built project detail and editing views (`GET /projects/<id>`, `POST /projects/<id>/update`), status transitions (`Active`, `Paused`, `Archived`), and safe project folder navigation (`/projects/<id>/folder`). Handled legacy NULL folders gracefully, and enforced filesystem folder retention upon project record deletion.
-- **Why**: Bridged database project metadata with dedicated filesystem folders, ensuring that deleting a project metadata entry never deletes project source files.
-- **Verification**: 14 new automated tests (`tests/test_projects_v043.py`).
-
-### v0.5.1 — Command Center Dashboard & Config Discovery (Current)
-- **What Changed**: Replaced placeholder homepage with an authenticated Command Center Dashboard (`GET /`) aggregating real database statistics (Notes, Ideas, Projects), $O(1)$ filesystem capacity summary via `storage_usage`, quick action shortcuts to all core workflows, and chronological feeds for recent notes, ideas, and active projects. Added automatic platform-neutral configuration discovery (`~/.config/batcave-cloud/batcave.env` / `$XDG_CONFIG_HOME`), eliminating the need to manually export `BATCAVE_CONFIG_FILE` in every new shell or Termux session while preserving explicit precedence and strict security validation.
-- **Why**: Transformed the landing experience into a functional daily dashboard and solved the session-specific environment variable problem on Android/Termux and other shells.
-- **Verification**: 14 new automated tests (`tests/test_dashboard_v051.py`).
-
----
-
-## Current Status
-
-- **Release**: `v0.5.1`
-- **Automated Tests**: 65 passing tests across 6 test suites.
-- **Verified Compatibility**: Windows 11 / PowerShell, Linux (Ubuntu/Debian), macOS, and Android 13 (Termux `aarch64`).
-- **Codebase Health**: Zero external runtime dependencies beyond Flask and Pillow; fully typed server modules with clean test isolation.
+| Subsystem | Implemented Capabilities |
+| :--- | :--- |
+| **Authentication** | Password verification via Werkzeug (`scrypt`/PBKDF2), session management, and `next` URL safe redirect validation. |
+| **Dashboard** | Command Center at `GET /` aggregating real database counts (Notes, Ideas, Projects), $O(1)$ filesystem capacity summary, quick actions, and recent activity feeds. |
+| **Files** | Hierarchical browser with clickable breadcrumbs, file sorting (name, size, date), metadata display, case-insensitive recursive search, atomic uploads (`xb` mode), safe moves with cycle detection, and $O(1)$ disk capacity via `shutil.disk_usage`. |
+| **Notes** | Full CRUD workspace with note title/content editing, automatic `updated_at` modification tracking while preserving `created_at`, title/content search, and deletion. |
+| **Ideas** | Rapid-capture minimalist inbox, idea text editing, case-insensitive content search, newest-first ordering, and deletion. |
+| **Projects** | Project tracking with descriptions and status toggles (`Active`, `Paused`, `Archived`), automatic provisioning of dedicated filesystem directories (`projects/project-<id>`), safe subfolder navigation, legacy `folder_name = NULL` compatibility, and deliberate directory retention on record deletion. |
+| **Photos** | Photo gallery grid, safe image serving, and image upload verification with Pillow (verifying image headers against file extensions and enforcing decompression bomb limits). |
+| **Persistence** | SQLite database with Write-Ahead Logging (`PRAGMA journal_mode = WAL`), foreign keys, busy timeouts, and additive migrations tracked via `PRAGMA user_version`. |
+| **Storage Confinement** | Sandboxed filesystem access confined to a configured `DATA_ROOT` using path canonicalization (`resolve_path`) to prevent path traversal (`../../`). |
+| **Security Protections** | Global CSRF token gating on all `POST` requests, strict security headers (CSP, `X-Frame-Options: DENY`, `nosniff`, `Permissions-Policy`), and `Cache-Control: no-store` on authenticated routes. |
+| **Deployment & Config** | Platform-neutral automatic discovery of configuration files (`~/.config/batcave-cloud/batcave.env` and `$XDG_CONFIG_HOME`), with explicit override support and zero auto-generated secrets. |
 
 ---
 
 ## Architecture
 
-Batcave Cloud strictly separates responsibilities into modular backend services:
+Batcave_Cloud follows a clean layered request pipeline:
 
 ```text
-Browser Client (LAN)
+Browser Client (Local Network)
        │
        ▼
-Flask WSGI Pipeline (server/app.py)
-  ├── @app.before_request (Auth Gate & CSRF Verification)
-  ├── Route Dispatcher (server/routes.py)
-  └── @app.after_request (Security Headers & Cache-Control)
+Flask Application Factory (server/app.py)
        │
-       ├───────────────────────────────┐
-       ▼                               ▼
-Storage Layer (server/storage.py)   Database Layer (server/database.py)
-  ├── Path Confinement (resolve_path) ├── SQLite (WAL Mode, foreign_keys)
-  ├── Upload Safety & Excl Creation   └── Additive Migrations (PRAGMA user_version)
-  └── Pillow Media Validation          │
-       │                               ▼
-       ▼                        batcave.db
-Batcave Data Directory (DATA_ROOT)
-  ├── files/    photos/   notes/
-  └── ideas/    projects/ backups/
+       ├── Global Request Hook: require_login_and_csrf()
+       │   ├── Authentication Check (session["authenticated"])
+       │   └── CSRF Gate on POST (secrets.compare_digest)
+       │
+       ▼
+Route Controllers (server/routes.py)
+       │
+       ├──► SQLite Database (server/database.py)
+       │    └── batcave.db (WAL mode, additive migrations)
+       │
+       └──► Storage Layer (server/storage.py)
+            └── Sandboxed Filesystem (DATA_ROOT)
+                 ├── files/      notes/     projects/
+                 ├── photos/     ideas/     backups/
+       │
+       ▼
+Jinja2 Templates & Static Assets (web/)
+       │
+       ▼
+Response Hook: add_security_headers() (CSP, nosniff, DENY, no-store)
 ```
 
-### Module Responsibilities
+### Core Architectural Modules
 
-| Module | Primary Responsibility |
-| :--- | :--- |
-| `server/app.py` | Application factory (`create_app`), global before/after request middleware, login/logout, and central error handlers. |
-| `server/config.py` | Environment variable parsing, private config file loading, and security validation. |
-| `server/auth.py` | Password verification (`check_password_hash`), cryptographic CSRF token generation and validation. |
-| `server/database.py` | SQLite connection pooling, WAL mode initialization, and additive schema migrations. |
-| `server/storage.py` | Path traversal prevention (`resolve_path`), exclusive atomic uploads, and Pillow image verification. |
-| `server/routes.py` | Authenticated controller endpoints for Files, Notes, Ideas, Projects, Photos, and Backups. |
-| `server/manage.py` | Local administration CLI (`create-config`) for generating secret keys and password hashes. |
-| `web/templates/` | Jinja2 HTML templates inheriting from `base.html`. |
-| `web/static/` | Shared styling (`style.css`) with responsive design and theme variables. |
+Every subsystem owns a distinct responsibility with clear boundaries:
+
+- [server/app.py](server/app.py): Application factory (`create_app`), directory bootstrapping, global authentication gate, global CSRF enforcement, security response headers, and central error handlers.
+- [server/config.py](server/config.py): Platform-neutral configuration discovery (`find_default_config_path`), environment variable parsing, and startup security validation (`validate_security_config`).
+- [server/auth.py](server/auth.py): Password verification (`verify_password`), cryptographic CSRF token generation, and constant-time token comparison (`valid_csrf_token`).
+- [server/database.py](server/database.py): SQLite connection management (`get_db`), WAL mode configuration, and additive migrations tracked via `PRAGMA user_version`.
+- [server/storage.py](server/storage.py): Path traversal prevention (`resolve_path`), atomic exclusive upload creation (`save_new_upload`), Pillow image verification (`validate_photo`), and $O(1)$ disk capacity calculation (`storage_usage`).
+- [server/routes.py](server/routes.py): Authenticated HTTP route handlers for Dashboard, Files, Notes, Ideas, Projects, Photos, and Backups.
+- [server/manage.py](server/manage.py): Local CLI management utility (`create-config`) for generating high-entropy secret keys and password hashes.
 
 For an in-depth architectural breakdown, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
@@ -184,315 +89,196 @@ For an in-depth architectural breakdown, see [docs/ARCHITECTURE.md](docs/ARCHITE
 
 ```text
 Batcave_Cloud/
-├── .gitignore               # Excludes secrets, caches, personal BatCave data
-├── batcave.env.example      # Safe configuration template with placeholders
-├── CONTRIBUTING.md          # Guidelines for contributing and testing
+├── .gitignore               # Excludes secrets (*.env), caches, and user data (BatCave/)
+├── batcave.env.example      # Documented configuration template with safe placeholders
+├── CONTRIBUTING.md          # Contribution guidelines, coding conventions, and test workflow
 ├── pytest.ini               # Pytest configuration (--capture=sys)
-├── README.md                # Project landing page and documentation
-├── requirements.txt         # Production runtime dependencies (Flask, Pillow)
-├── requirements-dev.txt     # Development & testing dependencies (pytest)
-├── docs/                    # Deep-dive documentation
-│   ├── ARCHITECTURE.md      # Detailed system architecture and data flows
-│   ├── CHANGELOG.md         # Chronological project changelog (v0.1 to v0.4.3)
-│   ├── DEVELOPMENT.md       # Developer guide, conventions, and test patterns
-│   ├── RUNNING.md           # Operational guide and feature manual
-│   └── SETUP.md             # Complete reproduction guide & hardware history
-├── server/                  # Backend application code
+├── README.md                # Project overview, architecture, and reproduction guide
+├── requirements.txt         # Production dependencies (Flask, Pillow)
+├── requirements-dev.txt     # Development dependencies (pytest)
+├── docs/                    # Deep-dive engineering documentation
+│   ├── ARCHITECTURE.md      # Detailed system architecture, component duties, and data flows
+│   ├── CHANGELOG.md         # Chronological release and milestone history
+│   ├── DEVELOPMENT.md       # Developer guide, test isolation, and coding patterns
+│   ├── RUNNING.md           # Operational guide, feature manual, and runtime configuration
+│   ├── SECURITY.md          # Security model, threat analysis, and unmitigated limitations
+│   └── SETUP.md             # Hardware history and reproduction guide across platforms
+├── server/                  # Backend application source code
 │   ├── __init__.py
-│   ├── app.py               # Application factory & HTTP security pipeline
-│   ├── auth.py              # Password verification & CSRF protection
-│   ├── config.py            # Environment configuration & validation
-│   ├── database.py          # SQLite connection and migrations
-│   ├── manage.py            # CLI management commands (create-config)
-│   ├── routes.py            # Authenticated route controllers
-│   └── storage.py           # Storage sandbox and image verification
-├── tests/                   # Isolated automated test suites
-│   ├── test_foundation.py   # v0.2: Auth, CSRF, upload safety, headers (11 tests)
-│   ├── test_files_v03.py    # v0.3: Breadcrumbs, metadata, sort, search, move (8 tests)
-│   ├── test_notes_v041.py   # v0.4.1: Notes editing, timestamps, search (7 tests)
-│   ├── test_ideas_v042.py   # v0.4.2: Ideas capture, editing, search (11 tests)
-│   └── test_projects_v043.py# v0.4.3: Projects editing, folders, retention (14 tests)
+│   ├── app.py               # Application factory, request pipeline, and security middleware
+│   ├── auth.py              # Password verification and CSRF token primitives
+│   ├── config.py            # Configuration discovery, parsing, and startup validation
+│   ├── database.py          # SQLite connection lifecycle and additive migrations
+│   ├── manage.py            # Local CLI commands (create-config)
+│   ├── routes.py            # Authenticated route controllers for all workspaces
+│   └── storage.py           # Path confinement sandbox and upload validation
+├── tests/                   # Isolated automated integration and unit test suites
+│   ├── test_foundation.py   # v0.2: Auth, CSRF, upload safety, security headers (11 tests)
+│   ├── test_files_v03.py    # v0.3: Breadcrumbs, metadata, sorting, search, moves (8 tests)
+│   ├── test_notes_v041.py   # v0.4.1: Notes editing, timestamps, search, 404 safety (7 tests)
+│   ├── test_ideas_v042.py   # v0.4.2: Ideas capture, editing, search, validation (11 tests)
+│   ├── test_projects_v043.py# v0.4.3: Projects editing, folders, retention on delete (14 tests)
+│   └── test_dashboard_v051.py# v0.5.1: Dashboard metrics, quick actions, config discovery (14 tests)
 └── web/                     # Frontend presentation layer
     ├── static/
-    │   └── style.css        # Responsive styling and design system
-    └── templates/           # Jinja2 templates (login, dashboard, files, etc.)
+    │   └── style.css        # Responsive styling and design system tokens
+    └── templates/           # Jinja2 HTML templates inheriting from base.html
+        ├── backups.html     # Backups view
+        ├── base.html        # Main layout, navigation, and CSRF meta tags
+        ├── dashboard.html   # Command Center dashboard view
+        ├── error.html       # Friendly error display (400, 403, 404, 413, 500)
+        ├── files.html       # Files workspace with breadcrumbs and move modal
+        ├── idea_edit.html   # Edit idea form
+        ├── ideas.html       # Ideas inbox and search view
+        ├── login.html       # Authentication screen
+        ├── note_edit.html   # Edit note form
+        ├── notes.html       # Notes workspace and search view
+        ├── photos.html      # Photo gallery and upload form
+        ├── project_detail.html # Project detail and metadata update view
+        ├── project_folder.html # Project dedicated folder file browser
+        └── projects.html    # Projects list and creation form
 ```
 
 ---
 
-## Security Model
+## Engineering Principles
 
-Security is grounded in defensive programming principles tailored for a private LAN environment:
+Batcave_Cloud adheres to a set of core engineering rules:
 
-### Implemented Protections
-- **Zero Default Passwords**: The server refuses to boot unless `BATCAVE_SECRET_KEY` and `BATCAVE_PASSWORD_HASH` are defined.
-- **Cryptographic Hashing**: Passwords are hashed using Werkzeug (`scrypt`/PBKDF2) and evaluated with constant-time comparison.
-- **Global CSRF Enforcement**: All mutating requests (`POST`) require a valid session CSRF token.
-- **Filesystem Confinement**: All file routes resolve target paths using `Path.resolve()` and verify that the target starts within the root path using `Path.relative_to()`. Path traversal attempts (`../../`) trigger HTTP 400 errors.
-- **No Overwrite on Upload**: Uploads use Python's exclusive creation mode (`xb`) to reject collisions.
-- **Pillow Media Verification**: Uploaded photos are inspected for decompression bombs and format mismatches.
-- **Safe Database Access**: All SQLite interactions use parameterized queries (`?`).
-- **Data Preservation**: Deleting a project removes the database row but intentionally keeps the filesystem directory intact.
-
-### Unmitigated Limitations (Not Implemented)
-- **No Native HTTPS**: Traffic over LAN is unencrypted HTTP. Do not run on untrusted public Wi-Fi without a VPN or reverse proxy.
-- **No Rate Limiting**: The login endpoint does not feature brute-force rate limiting.
-- **Single User**: No multi-user permissions, roles, or quotas.
-- **No Antivirus Scanning**: Files are not scanned for malicious executable code.
-
-For complete details and threat mitigations, see [docs/SECURITY.md](docs/SECURITY.md).
+1. **Centralized Security Boundaries**: Authentication gating, CSRF validation, and security headers are enforced globally in `server/app.py` middleware, ensuring individual route handlers cannot inadvertently bypass security checks.
+2. **Strict Storage Confinement**: All filesystem interactions are resolved and verified against designated root directories using `resolve_path()` in `server/storage.py`. Arbitrary path manipulation and directory traversal (`../../`) are blocked mathematically.
+3. **Configuration-Driven Secrets**: Secrets (`BATCAVE_SECRET_KEY`, `BATCAVE_PASSWORD_HASH`) are loaded from configuration files outside the repository. The application refuses to boot if secrets are missing and never silently generates temporary keys at runtime.
+4. **Additive Database Migrations**: Schema updates are managed through versioned migration functions in `server/database.py` tracked by SQLite's `PRAGMA user_version`. Table structures evolve additively without destructive rewrites.
+5. **Tested Mutations**: Every state-changing route (create, update, delete, upload, rename, move) has corresponding automated integration tests verifying both positive outcomes and failure modes.
+6. **Isolated Test Execution**: Tests run in temporary directories (`tempfile.TemporaryDirectory`) using independent application instances. Tests never modify development databases or personal files.
+7. **No Speculative Abstractions**: Components are kept straightforward and auditable. Heavy abstractions (such as generic repository layers or full ORMs) are avoided until concrete architectural requirements demand them.
+8. **Performance Over Scan-Heavy Loops**: Common operations (like Dashboard metrics or directory listings) avoid recursive directory walking. Disk capacity is retrieved in $O(1)$ time via `shutil.disk_usage()`.
+9. **Understandable Before Clever**: Code is structured to be readable, educational, and maintainable by an individual engineer.
 
 ---
 
-## Data & Storage Model
+## Security
 
-Batcave Cloud maintains a strict separation between code and user data. Personal files are never stored inside the Git repository.
+Batcave_Cloud implements defensive security controls appropriate for a private, trusted local network.
 
-```text
-DATA_ROOT/ (Configured via BATCAVE_DATA_ROOT)
-├── batcave.db               # SQLite database file (WAL mode enabled)
-├── files/                   # General file repository (nested folders supported)
-├── photos/                  # Validated image files
-├── notes/                   # Reserved for note file exports
-├── ideas/                   # Reserved for idea file exports
-├── projects/                # Dedicated project directories
-│   ├── project-1/           # Folder for project ID 1
-│   └── project-2/           # Folder for project ID 2
-├── backups/                 # Backup archives
-└── archive/                 # Long-term archive directory
-```
+### Current Protections (Implemented)
 
-### Schema & Migrations
-Database tables are managed with versioned migrations in `server/database.py`:
-- **Migration 1**: Creates `notes` (with `updated_at`), `ideas`, and `projects`.
-- **Migration 2**: Adds `folder_name TEXT` to `projects`.
-- SQLite version tracking is handled via `PRAGMA user_version`.
+- **Zero Hardcoded Secrets**: Requires explicit configuration of `BATCAVE_SECRET_KEY` and `BATCAVE_PASSWORD_HASH`. See [server/config.py](server/config.py).
+- **Constant-Time Password Verification**: Passwords hashed with PBKDF2/scrypt are verified via `werkzeug.security.check_password_hash`. See [server/auth.py](server/auth.py).
+- **Global CSRF Enforcement**: All mutating HTTP `POST` requests require a valid cryptographic session token verified via `secrets.compare_digest`. Tested in [tests/test_foundation.py](tests/test_foundation.py).
+- **Filesystem Path Confinement**: Path canonicalization via `resolve_path` guarantees that file reads, writes, and deletions stay within `DATA_ROOT`. Traversal attempts trigger HTTP 400 errors.
+- **Upload Safety & Collision Defense**: Uploaded filenames are sanitized (`clean_name`), files are written using exclusive binary mode (`xb`) to reject overwrites, and request bodies are capped at `MAX_CONTENT_LENGTH` (default 25 MB).
+- **Image Content Verification**: Uploaded images are parsed by Pillow to ensure binary formats match file extensions and to mitigate decompression bombs (`Image.MAX_IMAGE_PIXELS`).
+- **Hardened HTTP Headers**: Responses include a strict Content Security Policy (CSP), `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Permissions-Policy`, and `Cache-Control: no-store` on authenticated routes.
+- **SQL Injection Prevention**: All database interactions use parameterized queries (`?`).
 
-### Project Folder Lifecycles
-When a project is created, a dedicated folder `projects/project-<id>` is provisioned. If a user deletes the project record from the database, the folder is **retained on disk** to prevent data loss. Legacy projects with `folder_name = NULL` are displayed safely without generating unwanted directories.
+### Scope & Public Internet Boundaries
+
+> [!CAUTION]
+> **Batcave_Cloud is currently designed and secured for Local Area Network (LAN) operation only.**
+> - The native Python server runs over cleartext HTTP. It must not be exposed directly to the public internet via router port forwarding.
+> - Rate limiting, brute-force lockout, and multi-user access controls are not yet implemented.
+> - For access outside the home network, traffic must be encapsulated within an encrypted tunnel (e.g., WireGuard or Tailscale) or an authenticated HTTPS reverse proxy.
+
+For complete threat analysis and mitigations, see [docs/SECURITY.md](docs/SECURITY.md).
 
 ---
 
-## Setup From Scratch
+## Reproduce It Yourself
 
-### 1. Prerequisites
-- Python 3.10+ (tested up to 3.14)
-- Git
+Batcave_Cloud can be deployed and reproduced across multiple operating systems. Complete setup instructions and platform-specific details are documented in [docs/SETUP.md](docs/SETUP.md) and [docs/RUNNING.md](docs/RUNNING.md).
 
-### 2. Clone and Setup Environment
+### Quick Start (Linux / macOS / Windows / Android Termux)
 
-#### Linux / macOS
 ```bash
+# 1. Clone the repository
 git clone https://github.com/JeyaVardhan-L/Batcave_Cloud.git
 cd Batcave_Cloud
 
+# 2. Create and activate a Python virtual environment
 python3 -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate       # On Windows PowerShell: .\.venv\Scripts\Activate.ps1
+
+# 3. Install dependencies
 pip install -r requirements-dev.txt
-```
 
-#### Windows (PowerShell)
-```powershell
-git clone https://github.com/JeyaVardhan-L/Batcave_Cloud.git
-cd Batcave_Cloud
-
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements-dev.txt
-```
-
-### 3. Generate Private Configuration
-Create your secret key and password hash outside the repository:
-
-```bash
-# Any platform (generates ~/.config/batcave-cloud/batcave.env):
+# 4. Generate your private configuration (one-time)
 python -m server.manage create-config
 
-# Non-Android systems: set your local data directory
-# Linux / macOS:
-export BATCAVE_DATA_ROOT=~/BatCave
+# 5. Set local data root (on Windows/Linux/macOS; Android defaults automatically)
+export BATCAVE_DATA_ROOT=~/BatCave   # On Windows: $env:BATCAVE_DATA_ROOT = "$HOME\BatCave"
 
-# Windows PowerShell:
-$env:BATCAVE_DATA_ROOT = "$HOME\BatCave"
-```
-
-Batcave Cloud automatically discovers configuration files at `~/.config/batcave-cloud/batcave.env`.
-
-### 4. Run the Tests
-```bash
+# 6. Run the automated test suite
 python -m pytest -q
-```
-*(Expected: `65 passed`)*
 
-### 5. Start the Server
-```bash
-python -m server.app
-```
-Open your browser at `http://localhost:8080` (or `http://<lan-ip>:8080`) and log in.
-
----
-
-## Platform Guides
-
-### Windows (PowerShell)
-Windows is fully supported for development and local serving:
-```powershell
-git clone https://github.com/JeyaVardhan-L/Batcave_Cloud.git
-cd Batcave_Cloud
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements-dev.txt
-python -m server.manage create-config
-$env:BATCAVE_DATA_ROOT = "$HOME\BatCave"
+# 7. Start the server
 python -m server.app
 ```
 
-### Linux (Ubuntu/Debian)
-```bash
-sudo apt update && sudo apt install -y python3 python3-venv git
-git clone https://github.com/JeyaVardhan-L/Batcave_Cloud.git
-cd Batcave_Cloud
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements-dev.txt
-python -m server.manage create-config
-export BATCAVE_DATA_ROOT=~/BatCave
-python -m server.app
-```
+Once running, access the application in your browser at `http://localhost:8080` (or `http://<server-ip>:8080` from another device on the same local Wi-Fi network).
 
-### macOS
-```bash
-git clone https://github.com/JeyaVardhan-L/Batcave_Cloud.git
-cd Batcave_Cloud
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements-dev.txt
-python -m server.manage create-config
-export BATCAVE_DATA_ROOT=~/BatCave
-python -m server.app
-```
-
-### Android (Termux)
-The original deployment target for Batcave Cloud:
-1. Install **Termux from F-Droid**.
-2. Install prerequisites:
-   ```bash
-   pkg update && pkg install -y python git openssh libjpeg-turbo
-   termux-setup-storage
-   ```
-3. Clone and install:
-   ```bash
-   git clone https://github.com/JeyaVardhan-L/Batcave_Cloud.git ~/Batcave_Cloud
-   cd ~/Batcave_Cloud
-   python -m venv .venv
-   source .venv/bin/activate
-   pip install -r requirements-dev.txt
-   ```
-4. Generate config and run with wake-lock:
-   ```bash
-   python -m server.manage create-config
-   termux-wake-lock
-   python -m server.app
-   ```
-*(On Android, `BATCAVE_DATA_ROOT` automatically defaults to `/storage/emulated/0/BatCave` in shared storage, and config is auto-discovered from `~/.config/batcave-cloud/batcave.env` across all sessions).*
-
-For complete platform notes and hardware history, see [docs/SETUP.md](docs/SETUP.md).
+For complete platform guides:
+- **Windows**: See [docs/SETUP.md#windows-powershell](docs/SETUP.md#windows-powershell).
+- **Linux**: See [docs/SETUP.md#linux-debian-ubuntu-arch-fedora](docs/SETUP.md#linux-debian-ubuntu-arch-fedora).
+- **macOS**: See [docs/SETUP.md#macos-apple-silicon--intel](docs/SETUP.md#macos-apple-silicon--intel).
+- **Android / Termux**: See [docs/SETUP.md#android-termux](docs/SETUP.md#android-termux) and the original hardware notes.
 
 ---
 
-## Configuration
+## Documentation Map
 
-Configuration values are parsed from environment variables or loaded from the file referenced by `BATCAVE_CONFIG_FILE`. If `BATCAVE_CONFIG_FILE` is unset, Batcave Cloud automatically discovers `~/.config/batcave-cloud/batcave.env` (or `$XDG_CONFIG_HOME/batcave-cloud/batcave.env`).
+Detailed engineering documentation is organized in the `docs/` directory:
 
-| Variable | Default | Purpose |
-| :--- | :--- | :--- |
-| `BATCAVE_CONFIG_FILE` | *(Auto-discovered)* | Path to private `KEY=value` config file (overrides default discovery) |
-| `BATCAVE_SECRET_KEY` | *(Required)* | High-entropy string for session signing |
-| `BATCAVE_PASSWORD_HASH` | *(Required)* | Werkzeug password hash string |
-| `BATCAVE_DATA_ROOT` | `/storage/emulated/0/BatCave` | Path to storage directory holding personal files & database |
-| `BATCAVE_MAX_UPLOAD_MB` | `25` | Maximum allowed upload size in megabytes |
-| `BATCAVE_HOST` | `0.0.0.0` | Bind IP address for Flask |
-| `BATCAVE_PORT` | `8080` | Port for Flask web server |
-| `BATCAVE_SECURE_COOKIES`| `false` | Enforce HTTPS-only session cookies |
-
-See [batcave.env.example](batcave.env.example) for a safe configuration template.
+| Document | Description |
+| :--- | :--- |
+| [docs/SETUP.md](docs/SETUP.md) | Step-by-step reproduction instructions across all platforms and historical hardware notes. |
+| [docs/RUNNING.md](docs/RUNNING.md) | Operational manual covering daily execution, configuration parameters, and workspace features. |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | In-depth technical architecture, module responsibilities, request lifecycles, and database schemas. |
+| [docs/SECURITY.md](docs/SECURITY.md) | Formal threat model, implemented security controls, and explicit operational limitations. |
+| [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Developer guide, test suite structure, coding conventions, and pre-commit verification workflows. |
+| [docs/CHANGELOG.md](docs/CHANGELOG.md) | Chronological implementation history from initial prototype to current release. |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Engineering principles, repository hygiene standards, and pull request checklist. |
 
 ---
 
-## Running the Tests
+## Evolution & Milestones
 
-The test suite runs with complete filesystem isolation using temporary directories:
+The project has evolved through disciplined, test-verified milestones reflected in the git commit history:
 
-```bash
-python -m pytest -q
-```
-
-Output:
-```text
-.................................................................        [100%]
-65 passed in 42.23s
-```
-
-Test coverage by module:
-- `tests/test_foundation.py` (11 tests): Auth, session cookies, CSRF gating, traversal defense, uploads.
-- `tests/test_files_v03.py` (8 tests): Breadcrumbs, sorting, hierarchy search, moves, disk quota.
-- `tests/test_notes_v041.py` (7 tests): Notes CRUD, editing, `updated_at` timestamps, search.
-- `tests/test_ideas_v042.py` (11 tests): Ideas capture, editing, newest-first search, validation.
-- `tests/test_projects_v043.py` (14 tests): Projects detail/editing, folder navigation, NULL folder safety, folder retention on delete.
-- `tests/test_dashboard_v051.py` (14 tests): Dashboard auth, counts, ordering, quick actions, path/secret leakage, config discovery & precedence.
+- **`v0.1` (Initial Prototype)**: Proved execution viability of running a Python/Flask web server on an unused Samsung Galaxy Tab S6 Lite under Android 13 and Termux, directly interfacing with Android shared storage (`/storage/emulated/0/BatCave`). *(Commit `d524d9a`)*
+- **`v0.2` (Secure Foundation)**: Refactored the monolithic script into focused modules (`app.py`, `config.py`, `auth.py`, `database.py`, `storage.py`, `routes.py`, `manage.py`). Added password hashing, session login, global CSRF gating, path traversal defense (`resolve_path`), Pillow photo validation, security headers, and an automated test harness. *(Commit `e61201c`)*
+- **`v0.3.0` (Files Workspace)**: Built a capable file manager with clickable breadcrumb navigation, metadata inspection, column sorting, recursive search, safe moves with cycle detection, and $O(1)$ disk capacity display. *(Commit `e799969`)*
+- **`v0.4.1` (Notes Workspace)**: Upgraded Notes into an editable workspace with title/content editing, automatic `updated_at` modification tracking, title/content search, and robust 404 safety. *(Commit `40803a3`)*
+- **`v0.4.2` (Ideas Workspace)**: Enhanced the minimalist Ideas inbox with full editing views, newest-first ordering, content search, and empty-submission validation. *(Commit `7d22cfb`)*
+- **`v0.4.3` (Projects Workspace)**: Added project detail views, status workflows (`Active`, `Paused`, `Archived`), safe dedicated folder navigation (`projects/project-<id>`), legacy NULL folder safety, and deliberate filesystem retention upon record deletion. *(Commit `31cb381`)*
+- **`v0.5.1` (Command Center Dashboard & Config Discovery)**: Replaced placeholder home view with an authenticated Command Center Dashboard aggregating real database counts, $O(1)$ storage capacity, quick action buttons, and recent feeds. Added platform-neutral automatic configuration discovery (`~/.config/batcave-cloud/batcave.env`), eliminating manual environment exports across shell sessions. *(Commit `578e9d8`)*
 
 ---
 
-## Development Workflow
+## Current Limitations
 
-1. **Clone repository & activate virtual environment**.
-2. **Configure development environment** with `BATCAVE_DATA_ROOT` pointing to a scratch folder.
-3. **Make focused, incremental modifications** in small feature slices.
-4. **Add or update unit tests** in `tests/`.
-5. **Run tests**: `python -m pytest -q`.
-6. **Compile code**: `python -m compileall server tests`.
-7. **Check formatting & whitespace**: `git diff --check`.
-8. **Review changes**: `git diff`.
-9. **Commit**: Keep commit messages concise and descriptive.
+To maintain engineering transparency, the following areas are explicitly **unmitigated or unbuilt** in the current release:
 
-See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for detailed guidelines.
-
----
-
-## Design Decisions
-
-- **SQLite instead of PostgreSQL/MySQL**: For a single-user personal cloud running on low-power devices, SQLite with WAL mode delivers high performance, zero external service maintenance, and atomic database backups in a single file.
-- **Additive Migrations**: Schema updates are managed via SQLite's `PRAGMA user_version` through small, ordered migration functions rather than heavy ORM migration frameworks.
-- **Decoupled Architecture**: Separating `app.py`, `config.py`, `auth.py`, `database.py`, `storage.py`, and `routes.py` makes security properties auditable and unit-testable.
-- **Path Resolution Confinement**: Using `Path.resolve()` combined with `Path.relative_to()` creates a strict mathematical sandbox against directory traversal attacks.
-- **Folder Retention on Project Deletion**: When a project is removed from the database, its filesystem folder is deliberately preserved to prevent accidental deletion of user work.
-- **Explicit Search vs. Recursive Scanning**: Directory listings never walk subtrees recursively. Only explicit user searches trigger recursive scans.
-- **Graceful Legacy Handling**: Missing directories or NULL database values for legacy projects are handled gracefully with informative UI indicators rather than auto-generating directories.
-
----
-
-## Known Limitations
-
-- **LAN-Oriented Only**: Batcave Cloud has no native TLS or certificate automation. It is intended for private home Wi-Fi networks. Do not port-forward port 8080 to the public internet.
-- **Single-User Workspace**: There are no multiple accounts, role-based access control, or per-user permission boundaries.
-- **No Brute-Force Rate Limiting**: The login route does not implement exponential backoff or IP rate limiting.
-- **No Antivirus Scanning**: Uploaded files are verified for path safety and image validity, but not scanned for malware.
-- **No Automated Cloud Backups**: The system relies on local backups. Host machine failure requires manual restoration.
+- **LAN-Oriented Only**: The application does not contain native TLS/HTTPS certificate provisioning and is intended strictly for private, trusted local networks.
+- **No Direct Public Exposure**: The server must not be exposed to the public internet via port forwarding without an encrypted tunnel or reverse proxy.
+- **No Remote Access Layer Yet**: Secure remote access from outside the local network is currently being designed and has not yet been implemented.
+- **No Automated Backup / Recovery**: Database snapshots and archive exports are not yet automated. Host hardware failure requires manual restoration from external backups.
+- **Single-User Workspace**: There is no multi-user isolation, user registration, role-based access control, or per-user quota management.
+- **No Brute-Force Rate Limiting**: The login route does not feature exponential backoff or IP rate limiting.
+- **No Antivirus Scanning**: Files are validated for path safety, size limits, and image validity, but are not scanned for malicious payloads.
 
 ---
 
 ## Roadmap
 
-### Completed Milestones
-- [x] **v0.1**: Initial hardware exploration and prototype on Android / Termux.
-- [x] **v0.2**: Secure foundation refactoring, authentication, CSRF, storage sandbox, security headers, automated test harness.
-- [x] **v0.3**: Files workspace with breadcrumbs, sorting, metadata, hierarchy search, moves, and storage capacity display.
-- [x] **v0.4.1**: Notes workspace with editing, update timestamps, and search.
-- [x] **v0.4.2**: Ideas workspace with quick-capture, editing, and newest-first search.
-- [x] **v0.4.3**: Projects workspace with detail/edit views, folder exploration, safe NULL folder handling, and directory retention.
+Batcave_Cloud is developed incrementally as an educational systems engineering project. The planned development sequence includes:
 
-### Next / Planned Explorations
-- **Photos Enhancements**: Album categorization, lightweight thumbnail generation, and date-taken metadata extraction.
-- **Backup Automation**: Scheduled local archive generation of database and user storage.
-- **Encrypted Remote Access Guide**: Documenting step-by-step Tailscale / WireGuard setup for accessing Batcave Cloud securely outside the home network.
-- **Storage Indexing**: Background indexing for large photo and file collections to replace runtime `rglob` scans.
+1. **Repository & Documentation Polish**: Consolidate engineering documentation, architecture maps, and contribution standards. *(Current phase)*
+2. **Backups & Archive System**: Implement automated database snapshot generation, archive export workflows, and recovery verification tools before exposing the server remotely.
+3. **Remote Access Architecture**: Design and implement secure off-LAN access (evaluating encrypted mesh networks like Tailscale/WireGuard vs. cloud tunnel relays) with strict security boundaries and encrypted transport.
+4. **Production Hardening & Deployment**: Containerization options, process supervision, reverse proxy configurations, and TLS automation.
+5. **Feature & UI Expansion**: Additional media viewing enhancements, search optimizations, and workspace utilities.
+
+---
+
+*Batcave_Cloud is built deliberately as an open engineering project to explore backend systems, storage security, and self-hosted infrastructure.*

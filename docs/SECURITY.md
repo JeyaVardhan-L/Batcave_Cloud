@@ -1,6 +1,6 @@
 # Batcave Cloud — Security Model & Threat Assessment
 
-This document provides a comprehensive breakdown of the security controls implemented in Batcave Cloud (v0.4.3), as well as an explicit enumeration of security limitations.
+This document provides a comprehensive breakdown of the security controls implemented in Batcave Cloud (`v0.5.1`), as well as an explicit enumeration of security limitations.
 
 ---
 
@@ -10,52 +10,57 @@ Batcave Cloud is designed as a **single-user personal workspace running within a
 
 > [!CAUTION]
 > **Do not expose Batcave Cloud directly to the public internet via port forwarding.**
-> The application is not hardened against public-internet attack vectors. If remote access outside your home network is required, route traffic through a secure, encrypted tunnel such as a private WireGuard / Tailscale VPN or an authenticated HTTPS reverse proxy with rate limiting.
+> The application is not hardened against public-internet attack vectors. If remote access outside your home network is required, route traffic through a secure, encrypted tunnel such as a private WireGuard / Tailscale mesh network or an authenticated HTTPS reverse proxy with strict rate limiting.
 
 ---
 
 ## 2. Implemented Security Controls
 
-### 2.1 Authentication & Session Management
-- **Single-User Access**: Access to all application views and APIs (except the login screen and static assets) requires an active authenticated session.
-- **Password Hashing**: Passwords are never stored in plaintext. They are hashed using `werkzeug.security.generate_password_hash` (PBKDF2/scrypt) during initial configuration.
-- **Constant-Time Verification**: Verification uses `werkzeug.security.check_password_hash` to defend against timing attacks.
+### 2.1 Configuration-Driven Secrets & Startup Validation
+- **Explicit Credential Enforcement**: The application refuses to boot if `BATCAVE_SECRET_KEY` or `BATCAVE_PASSWORD_HASH` is missing or empty. See [server/config.py](../server/config.py#L85-L103).
+- **No Silent Credential Fallbacks**: Unlike many quickstart servers, Batcave Cloud never generates temporary secrets or weak default passwords at runtime.
+- **Auto-Discovery & Precedence**: Automatically discovers `~/.config/batcave-cloud/batcave.env` (or `$XDG_CONFIG_HOME/batcave-cloud/batcave.env`), while an explicit `BATCAVE_CONFIG_FILE` environment variable maintains strict override precedence. Tested in [tests/test_dashboard_v051.py](../tests/test_dashboard_v051.py).
+
+### 2.2 Authentication & Session Management
+- **Single-User Access**: Access to all application views and APIs (except the login screen and static assets) requires an active authenticated session (`session["authenticated"] == True`). Enforced in [server/app.py](../server/app.py#L38-L51).
+- **Password Hashing**: Passwords are never stored in plaintext. They are hashed using Werkzeug (`scrypt`/PBKDF2) during initial configuration via `python -m server.manage create-config`.
+- **Constant-Time Verification**: Verification uses `werkzeug.security.check_password_hash` in [server/auth.py](../server/auth.py#L11-L15) to defend against timing side-channel attacks.
 - **Session Protection**:
-  - `SESSION_COOKIE_HTTPONLY = True`: Blocks client-side JavaScript access to session cookies, mitigating cookie theft via cross-site scripting (XSS).
+  - `SESSION_COOKIE_HTTPONLY = True`: Blocks client-side JavaScript access to session cookies, mitigating cookie theft via XSS.
   - `SESSION_COOKIE_SAMESITE = "Lax"`: Provides default CSRF protection for top-level navigation.
   - `SESSION_COOKIE_SECURE`: Configurable via `BATCAVE_SECURE_COOKIES` (enforce `True` when operating behind an HTTPS reverse proxy).
   - Session regeneration on login (`session.clear()`) prevents session fixation attacks.
 
-### 2.2 Cross-Site Request Forgery (CSRF) Defense
+### 2.3 Cross-Site Request Forgery (CSRF) Defense
 - **Cryptographic Tokens**: A 32-byte URL-safe cryptographic token is generated using Python's `secrets` module and stored in the user's session.
-- **Global Enforcement**: Every `POST` request to the application is intercepted by the global `@app.before_request` hook. The token submitted in `request.form["csrf_token"]` is compared against the session token using `secrets.compare_digest` (constant-time).
-- Requests lacking a valid token are immediately aborted with an HTTP 400 response.
+- **Global Enforcement**: Every `POST` request to the application is intercepted by the global `@app.before_request` hook in [server/app.py](../server/app.py#L53-L60). The token submitted in `request.form["csrf_token"]` is compared against the session token using `secrets.compare_digest` in [server/auth.py](../server/auth.py#L22-L28).
+- Requests lacking a valid token are immediately aborted with an HTTP 400 response. Verified in [tests/test_foundation.py](../tests/test_foundation.py).
 
-### 2.3 Path Traversal & Filesystem Confinement
-- **Storage Sandbox (`resolve_path`)**: All file and directory operations (listing, uploading, downloading, renaming, moving, deleting) resolve targets through `server/storage.py`.
+### 2.4 Path Traversal & Filesystem Confinement
+- **Storage Sandbox (`resolve_path`)**: All file and directory operations (listing, uploading, downloading, renaming, moving, deleting) resolve targets through `resolve_path()` in [server/storage.py](../server/storage.py#L27-L44).
 - **Strict Confinement**:
   ```python
   root_resolved = root.resolve()
   candidate = (root / relative_path).resolve()
   candidate.relative_to(root_resolved)
   ```
-  Any attempt to escape the designated storage root using relative sequences (`../../`), absolute paths, or symbolic links triggers an `InvalidPathError` and yields an HTTP 400 error.
+  Any attempt to escape the designated storage root using relative sequences (`../../`), absolute paths, or symbolic links triggers an `InvalidPathError` and yields an HTTP 400 error. Tested in [tests/test_foundation.py](../tests/test_foundation.py).
 - **Root Protection**: Operations that modify or delete files pass `allow_root=False`, preventing renaming, moving, or deleting the root storage folders.
-- **Cycle & Self-Move Prevention**: Moving a folder into itself or any of its descendant subdirectories is explicitly detected and rejected to prevent filesystem corruption.
+- **Cycle & Self-Move Prevention**: Moving a folder into itself or any of its descendant subdirectories is explicitly detected and rejected to prevent filesystem corruption. Tested in [tests/test_files_v03.py](../tests/test_files_v03.py).
 
-### 2.4 Upload Safety & Collision Prevention
+### 2.5 Upload Safety & Collision Prevention
 - **Name Sanitization (`clean_name`)**: Uploaded filenames are sanitized using Werkzeug's `secure_filename`, stripping path separators (`/`, `\`), null bytes, and shell metacharacters.
 - **Atomic, Exclusive Creation**: `save_new_upload()` opens destination files with exclusive binary creation mode (`xb`). If a file with the target name already exists, the upload is rejected with `FileExistsError`, preventing accidental or malicious file overwriting.
 - **Partial Stream Cleanup**: If an upload stream fails or is interrupted midway, any partial file created on disk is immediately unlinked.
 - **Upload Size Limits**: Uploads are constrained by `MAX_CONTENT_LENGTH` (default: 25 MB). Payloads exceeding the limit are rejected with HTTP 413.
 
-### 2.5 Media & Image Verification
+### 2.6 Media & Image Verification
 - **Extension & Format Verification**: Photos uploaded to `/photos/upload` must match allowed extensions (`.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`).
 - **Binary Content Inspection**: Files are inspected using Pillow (`Image.open()`, `Image.verify()`). If the internal file format does not match its claimed file extension, the file is rejected.
-- **Decompression Bomb Defense**: `Image.MAX_IMAGE_PIXELS` is clamped to `30_000_000` pixels to defend against zip/image bomb attacks intended to exhaust server memory.
+- **Decompression Bomb Defense**: `Image.MAX_IMAGE_PIXELS` is clamped to `30_000_000` pixels to defend against zip/image bomb attacks intended to exhaust server memory. Tested in [tests/test_foundation.py](../tests/test_foundation.py).
 
-### 2.6 HTTP Security Headers
-All HTTP responses include hardened security headers injected via `@app.after_request`:
+### 2.7 HTTP Security Headers
+All HTTP responses include hardened security headers injected via `@app.after_request` in [server/app.py](../server/app.py#L66-L84):
 - `X-Content-Type-Options: nosniff` — Prevents MIME-type sniffing by browsers.
 - `X-Frame-Options: DENY` — Defends against clickjacking.
 - `Referrer-Policy: same-origin` — Protects internal path information from leaking in referrer headers.
@@ -67,18 +72,18 @@ All HTTP responses include hardened security headers injected via `@app.after_re
   Restricts script and asset execution strictly to local origin.
 - `Cache-Control: no-store` — Applied to all dynamic routes to prevent browser history caching of sensitive workspace data on shared client computers.
 
-### 2.7 Database Security
-- **SQL Injection Prevention**: All queries across `notes`, `ideas`, and `projects` use parameterized SQLite queries (`?` placeholders). No user input is concatenated into raw SQL strings.
-- **Data Retention on Deletion**: When a project is deleted from the database, its filesystem folder is deliberately preserved on disk to prevent accidental data loss.
+### 2.8 Database Security
+- **SQL Injection Prevention**: All queries across `notes`, `ideas`, and `projects` use parameterized SQLite queries (`?` placeholders) in [server/routes.py](../server/routes.py) and [server/database.py](../server/database.py). No user input is concatenated into raw SQL strings.
+- **Data Retention on Deletion**: When a project is deleted from the database, its filesystem folder is deliberately preserved on disk to prevent accidental data loss. Tested in [tests/test_projects_v043.py](../tests/test_projects_v043.py).
 
-### 2.8 Open Redirect Protection
+### 2.9 Open Redirect Protection
 - The login endpoint validates the `next` redirect parameter using `_safe_next_url()`. URLs containing a scheme (e.g. `http:`, `https:`) or domain name, or not starting with `/`, are rejected to prevent phishing redirects.
 
 ---
 
 ## 3. Unmitigated Limitations (Not Implemented)
 
-The following security controls are **NOT** present in Batcave Cloud v0.4.3:
+The following security controls are **NOT** present in Batcave Cloud `v0.5.1`:
 
 1. **No Built-in TLS / HTTPS**:
    - The native development server runs over cleartext HTTP. On a local Wi-Fi or wired network, unencrypted traffic could be intercepted by untrusted devices on the same subnet.

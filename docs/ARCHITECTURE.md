@@ -55,7 +55,7 @@ The system separates concerns into discrete layers:
 
 ## 2. Component Responsibilities
 
-### `server/app.py` — Application Factory & Pipeline Security
+### [`server/app.py`](../server/app.py) — Application Factory & Pipeline Security
 - **Factory Pattern (`create_app`)**: Initializes the Flask application with explicit template and static paths, applies configuration, validates secrets, ensures root storage directories exist, and initializes the SQLite database.
 - **Directory Bootstrapping**: Automatically creates the 7 core subdirectories (`files`, `photos`, `notes`, `ideas`, `projects`, `backups`, `archive`) inside `DATA_ROOT` on startup.
 - **Global Authentication Gate (`@app.before_request`)**:
@@ -73,7 +73,7 @@ The system separates concerns into discrete layers:
   - Appends `Cache-Control: no-store` on non-static responses to prevent caching authenticated content on shared devices.
 - **Central Error Handling**: Provides user-friendly error views for HTTP 400, 403, 404, 413 (File Too Large), and 500.
 
-### `server/config.py` — Configuration Management
+### [`server/config.py`](../server/config.py) — Configuration Management
 - **Automatic Configuration Discovery (`get_default_config_path`, `find_default_config_path`)**: Automatically discovers configuration files at `$XDG_CONFIG_HOME/batcave-cloud/batcave.env` or `~/.config/batcave-cloud/batcave.env` when `BATCAVE_CONFIG_FILE` is not explicitly exported.
 - **Environment File Loader (`load_environment_file`)**: Loads simple `KEY=value` configuration files without external dependencies. Supports both explicit paths (where missing file triggers an error) and auto-discovered default paths.
 - **Configuration Builder (`build_config`)**:
@@ -89,14 +89,14 @@ The system separates concerns into discrete layers:
   - `SESSION_COOKIE_SECURE`: Configurable boolean (set `True` when behind HTTPS).
 - **Security Validation (`validate_security_config`)**: Refuses to boot the server if `SECRET_KEY` or `PASSWORD_HASH` is missing or empty. Never silently generates credentials; provides clear setup guidance.
 
-### `server/auth.py` — Authentication & CSRF
+### [`server/auth.py`](../server/auth.py) — Authentication & CSRF
 - **Password Verification (`verify_password`)**: Verifies passwords against `PASSWORD_HASH` using `werkzeug.security.check_password_hash`.
 - **CSRF Token Generation & Verification**:
   - `csrf_token()`: Generates and caches a 32-byte URL-safe cryptographic token in the session.
   - `valid_csrf_token()`: Validates token using `secrets.compare_digest`.
   - `csrf_protect`: Decorator for explicit endpoint protection (complementing global middleware).
 
-### `server/storage.py` — Safe Storage & Media Handling
+### [`server/storage.py`](../server/storage.py) — Safe Storage & Media Handling
 - **Path Confinement (`resolve_path`)**:
   - Canonicalizes both root and target paths using `Path.resolve()`.
   - Enforces that target paths are strictly within root via `Path.relative_to()`.
@@ -116,7 +116,7 @@ The system separates concerns into discrete layers:
   - Formats file sizes into human-readable units (`B`, `KB`, `MB`, `GB`).
   - `storage_usage()` computes filesystem capacity via `shutil.disk_usage()` in $O(1)$ time without recursive directory scans.
 
-### `server/database.py` — SQLite & Schema Migrations
+### [`server/database.py`](../server/database.py) — SQLite & Schema Migrations
 - **Connection Management**:
   - SQLite with `timeout=10` and `PRAGMA busy_timeout = 10000`.
   - Configures `PRAGMA foreign_keys = ON` and `row_factory = sqlite3.Row`.
@@ -126,7 +126,7 @@ The system separates concerns into discrete layers:
   - Migration 1: Creates tables `notes`, `ideas`, and `projects`.
   - Migration 2: Adds `folder_name TEXT` column to `projects` table safely.
 
-### `server/routes.py` — Application Controllers
+### [`server/routes.py`](../server/routes.py) — Application Controllers
 - **Dashboard (`/`)**: Main Command Center aggregating storage capacity summary via `storage_usage`, real workspace counts (Notes, Ideas, Projects), quick action links to existing workflows, and recent items (Notes, Ideas, Active Projects) in $O(1)$ without recursive directory traversal.
 - **Files (`/files`, `/files/<subpath>`)**: Directory navigation, clickable breadcrumbs, file sorting (name, size, date), recursive search, upload, directory creation, rename, move (with descendant/cycle prevention), download, and safe open.
 - **Notes (`/notes`, `/notes/<id>`)**: Notes list, note creation, note editing/updating (with automatic `updated_at` timestamps), deletion, and search (title/content) ordered by most recently updated.
@@ -135,7 +135,7 @@ The system separates concerns into discrete layers:
 - **Photos (`/photos`, `/photos/upload`, `/photos/view/<filename>`)**: Photo grid, verified image uploads, and safe inline image delivery.
 - **Backups (`/backups`)**: View backup statistics.
 
-### `server/manage.py` — Local Management CLI
+### [`server/manage.py`](../server/manage.py) — Local Management CLI
 - Provides `create-config [--output <path>]` command:
   - Prompts securely for password using `getpass`.
   - Generates high-entropy secret key (`secrets.token_urlsafe(48)`).
