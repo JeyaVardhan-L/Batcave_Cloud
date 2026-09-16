@@ -9,6 +9,11 @@
         <p class="eyebrow">COMMAND CENTER</p>
         <h1>Dashboard</h1>
         <p>Personal cloud overview, workspace statistics, and quick workflows.</p>
+        <div class="console-meta-strip">
+            <span class="tech-marker"><span class="status-indicator-dot"></span> NODE: LOCALHOST</span>
+            <span class="tech-marker">STORAGE: MOUNTED</span>
+            <span class="tech-marker">BATCAVE v0.5.1</span>
+        </div>
     </div>
 
     <div class="storage-summary" aria-label="Storage capacity">
@@ -18,40 +23,42 @@
     </div>
 </div>
 
-<section class="panel quick-actions-panel">
-    <h2>Quick Actions</h2>
-    <div class="quick-actions">
-        <a href="{{ url_for('notes') }}" class="button">📝 New Note</a>
-        <a href="{{ url_for('ideas') }}" class="button">💡 New Idea</a>
-        <a href="{{ url_for('projects') }}" class="button">🚀 New Project</a>
-        <a href="{{ url_for('files') }}" class="button secondary">📁 Open Files</a>
-    </div>
-</section>
-
 <section class="dashboard-grid">
     <a href="{{ url_for('files') }}" class="card">
-        <div class="card-icon">📁</div>
+        <div class="card-top-meta">
+            <div class="card-icon">📁</div>
+            <span class="tech-marker">01 // STORAGE</span>
+        </div>
         <h2>Files</h2>
         <p>Browse, upload, and manage personal files.</p>
         <strong>{{ usage.used }} used ({{ usage.free }} free)</strong>
     </a>
 
     <a href="{{ url_for('notes') }}" class="card">
-        <div class="card-icon">📝</div>
+        <div class="card-top-meta">
+            <div class="card-icon">📝</div>
+            <span class="tech-marker">02 // NOTES</span>
+        </div>
         <h2>Notes</h2>
         <p>Store persistent notes locally.</p>
         <strong>{{ note_count }} notes</strong>
     </a>
 
     <a href="{{ url_for('ideas') }}" class="card">
-        <div class="card-icon">💡</div>
+        <div class="card-top-meta">
+            <div class="card-icon">💡</div>
+            <span class="tech-marker">03 // IDEAS</span>
+        </div>
         <h2>Ideas</h2>
         <p>Quickly capture thoughts before they disappear.</p>
         <strong>{{ idea_count }} ideas</strong>
     </a>
 
     <a href="{{ url_for('projects') }}" class="card">
-        <div class="card-icon">🚀</div>
+        <div class="card-top-meta">
+            <div class="card-icon">🚀</div>
+            <span class="tech-marker">04 // PROJECTS</span>
+        </div>
         <h2>Projects</h2>
         <p>Things you're building or planning.</p>
         <strong>{{ project_count }} projects ({{ active_project_count }} active)</strong>
@@ -61,7 +68,10 @@
 <section class="dashboard-columns">
     <div class="panel dashboard-column">
         <div class="column-header">
-            <h2>Recent Notes</h2>
+            <div>
+                <span class="tech-marker">LOG // KNOWLEDGE</span>
+                <h2>Recent Notes</h2>
+            </div>
             <a href="{{ url_for('notes') }}" class="small-button secondary">View all</a>
         </div>
         {% if recent_notes %}
@@ -82,7 +92,10 @@
 
     <div class="panel dashboard-column">
         <div class="column-header">
-            <h2>Recent Ideas</h2>
+            <div>
+                <span class="tech-marker">LOG // CAPTURE</span>
+                <h2>Recent Ideas</h2>
+            </div>
             <a href="{{ url_for('ideas') }}" class="small-button secondary">View all</a>
         </div>
         {% if recent_ideas %}
@@ -103,7 +116,10 @@
 
     <div class="panel dashboard-column">
         <div class="column-header">
-            <h2>Active Projects</h2>
+            <div>
+                <span class="tech-marker">SPEC // ACTIVE</span>
+                <h2>Active Projects</h2>
+            </div>
             <a href="{{ url_for('projects') }}" class="small-button secondary">View all</a>
         </div>
         {% if active_projects %}
@@ -114,7 +130,7 @@
                             <a class="project-title-link" href="{{ url_for('project_detail', project_id=project['id']) }}">
                                 <strong>{{ project['name'] }}</strong>
                             </a>
-                            <span class="status">{{ project['status'] }}</span>
+                            <span class="status status-{{ project['status']|lower }}" data-status="{{ project['status'] }}">{{ project['status'] }}</span>
                         </div>
                         {% if project['description'] %}
                             <p class="project-snippet">{{ project['description'] }}</p>
@@ -126,6 +142,19 @@
         {% else %}
             <div class="empty">No active projects.</div>
         {% endif %}
+    </div>
+</section>
+
+<section class="panel quick-actions-panel">
+    <div class="quick-actions-header">
+        <span class="tech-marker">DISPATCH // WORKFLOWS</span>
+        <h2>Quick Actions</h2>
+    </div>
+    <div class="quick-actions">
+        <a href="{{ url_for('notes') }}" class="button">📝 New Note</a>
+        <a href="{{ url_for('ideas') }}" class="button">💡 New Idea</a>
+        <a href="{{ url_for('projects') }}" class="button">🚀 New Project</a>
+        <a href="{{ url_for('files') }}" class="button secondary">📁 Open Files</a>
     </div>
 </section>
 

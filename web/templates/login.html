@@ -9,7 +9,10 @@
 <body>
 <main class="container login-container">
     <section class="panel login-panel">
-        <p class="eyebrow">PERSONAL CLOUD</p>
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <p class="eyebrow">PERSONAL CLOUD</p>
+            <span class="brand-badge">HOME-LAB // LOCAL</span>
+        </div>
         <h1>Batcave</h1>
         <p>Enter your local Batcave password.</p>
         {% with messages = get_flashed_messages() %}

@@ -59,7 +59,7 @@
                 <h2><a class="project-title-link" href="{{ url_for('project_detail', project_id=project['id']) }}">{{ project["name"] }}</a></h2>
                 <small>{{ project["created_at"] }}</small>
             </div>
-            <span class="status">
+            <span class="status status-{{ project['status']|lower }}" data-status="{{ project['status'] }}">
                 {{ project["status"] }}
             </span>
         </div>

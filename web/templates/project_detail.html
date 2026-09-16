@@ -14,7 +14,7 @@
 <section class="panel project-editor-panel">
     <div class="project-meta-bar">
         <div class="project-meta-items">
-            <span class="status">{{ project["status"] }}</span>
+            <span class="status status-{{ project['status']|lower }}" data-status="{{ project['status'] }}">{{ project["status"] }}</span>
             {% if project["folder_name"] and has_folder %}
                 <a class="button secondary" href="{{ url_for('project_folder', project_id=project['id']) }}">Open Project Folder ({{ project["folder_name"] }})</a>
             {% elif project["folder_name"] %}
