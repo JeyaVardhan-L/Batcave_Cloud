@@ -1,6 +1,6 @@
 # Batcave Cloud — Setup & Reproduction Guide
 
-This guide explains how to reproduce Batcave Cloud (v0.4.3) from scratch on **Windows**, **Linux**, **macOS**, and **Android (Termux)**. It also preserves the historical hardware documentation of the original deployment on an Android tablet.
+This guide explains how to reproduce Batcave Cloud (v0.5.1) from scratch on **Windows**, **Linux**, **macOS**, and **Android (Termux)**. It also preserves the historical hardware documentation of the original deployment on an Android tablet.
 
 ---
 
@@ -38,21 +38,17 @@ Create a Python virtual environment to avoid installing packages into your globa
 *(Note: If you only plan to run the server and not execute tests, you can install `requirements.txt` instead of `requirements-dev.txt`.)*
 
 ### 4. Generate Private Configuration
-Batcave Cloud refuses to boot without a secret key and password hash. Generate a private configuration file outside the repository:
+Batcave Cloud refuses to boot without a secret key and password hash. Generate a private configuration file outside the repository using the built-in CLI:
 
-- **Linux / macOS / Termux**:
-  ```bash
-  python -m server.manage create-config --output ~/.config/batcave-cloud/batcave.env
-  export BATCAVE_CONFIG_FILE=~/.config/batcave-cloud/batcave.env
-  ```
+```bash
+python -m server.manage create-config
+```
 
-- **Windows (PowerShell)**:
-  ```powershell
-  python -m server.manage create-config --output "$HOME\.config\batcave-cloud\batcave.env"
-  $env:BATCAVE_CONFIG_FILE = "$HOME\.config\batcave-cloud\batcave.env"
-  ```
+When prompted, enter and confirm your password. The tool automatically writes your private configuration (`BATCAVE_SECRET_KEY` and `BATCAVE_PASSWORD_HASH`) to `~/.config/batcave-cloud/batcave.env`.
 
-When prompted, enter a password for your single-user workspace.
+> [!TIP]
+> **Automatic Discovery (New in v0.5.1)**: Batcave Cloud automatically discovers `~/.config/batcave-cloud/batcave.env` on startup. You do **not** need to manually `export BATCAVE_CONFIG_FILE` every time you open a new shell or Termux session.
+> If you wish to store configuration in a custom location, use `--output <path>` and set `BATCAVE_CONFIG_FILE=<path>`.
 
 ### 5. Configure Storage Location (Non-Android Systems)
 By default, `BATCAVE_DATA_ROOT` points to `/storage/emulated/0/BatCave` (the Android shared storage path). On other operating systems, set this variable to a local directory of your choice:
@@ -75,7 +71,7 @@ Verify that your local environment is functioning correctly by running the test 
 ```bash
 python -m pytest -q
 ```
-Expected result: `51 passed`.
+Expected result: `65 passed`.
 
 ### 7. Start the Server
 ```bash
@@ -111,14 +107,14 @@ Log in using the password you configured in Step 4.
    ```
 4. Create your private configuration:
    ```powershell
-   .\.venv\Scripts\python.exe -m server.manage create-config --output "$HOME\.config\batcave-cloud\batcave.env"
+   .\.venv\Scripts\python.exe -m server.manage create-config
    ```
-5. Set environment variables and run:
+5. Set your local storage directory and run:
    ```powershell
-   $env:BATCAVE_CONFIG_FILE = "$HOME\.config\batcave-cloud\batcave.env"
    $env:BATCAVE_DATA_ROOT = "$HOME\BatCave"
    .\.venv\Scripts\python.exe -m server.app
    ```
+   *(Batcave Cloud automatically discovers the configuration generated in `$HOME\.config\batcave-cloud\batcave.env`.)*
 
 ### Linux (Debian, Ubuntu, Arch, Fedora)
 
@@ -137,11 +133,11 @@ Log in using the password you configured in Step 4.
    ```
 3. Generate config and run:
    ```bash
-   python -m server.manage create-config --output ~/.config/batcave-cloud/batcave.env
-   export BATCAVE_CONFIG_FILE=~/.config/batcave-cloud/batcave.env
+   python -m server.manage create-config
    export BATCAVE_DATA_ROOT=~/BatCave
    python -m server.app
    ```
+   *(Configuration is auto-discovered from `~/.config/batcave-cloud/batcave.env`.)*
 
 ### macOS (Apple Silicon & Intel)
 
@@ -159,11 +155,11 @@ Log in using the password you configured in Step 4.
    ```
 3. Generate config and run:
    ```bash
-   python -m server.manage create-config --output ~/.config/batcave-cloud/batcave.env
-   export BATCAVE_CONFIG_FILE=~/.config/batcave-cloud/batcave.env
+   python -m server.manage create-config
    export BATCAVE_DATA_ROOT=~/BatCave
    python -m server.app
    ```
+   *(Configuration is auto-discovered from `~/.config/batcave-cloud/batcave.env`.)*
 
 ### Android (Termux)
 
@@ -193,12 +189,11 @@ Batcave Cloud was originally created and hosted on an Android device running Ter
    source .venv/bin/activate
    pip install -r requirements-dev.txt
    ```
-6. **Generate Configuration**:
+6. **Generate Configuration (One-Time Setup)**:
    ```bash
-   python -m server.manage create-config --output ~/.config/batcave-cloud/batcave.env
-   export BATCAVE_CONFIG_FILE=~/.config/batcave-cloud/batcave.env
+   python -m server.manage create-config
    ```
-   *(On Android/Termux, `BATCAVE_DATA_ROOT` defaults to `/storage/emulated/0/BatCave`, keeping user files in shared storage accessible by other Android apps).*
+   *(Configuration is saved to `~/.config/batcave-cloud/batcave.env` and automatically discovered in every future session).*
 7. **Keep Termux Running in Background**:
    To prevent Android's battery optimizer from killing the server when the screen is turned off:
    - Disable Android battery optimizations for Termux (`Settings > Apps > Termux > Battery > Unrestricted`).
@@ -206,10 +201,11 @@ Batcave Cloud was originally created and hosted on an Android device running Ter
      ```bash
      termux-wake-lock
      ```
-8. **Start the Server**:
+8. **Start the Server in Any Session**:
    ```bash
    python -m server.app
    ```
+   *(No manual `export BATCAVE_CONFIG_FILE` needed in new Termux sessions).*
 9. **Access from Android Browser**:
    Open Chrome or Firefox on the tablet and visit:
    ```text

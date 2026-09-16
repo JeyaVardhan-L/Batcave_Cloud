@@ -1,6 +1,6 @@
 # Batcave Cloud — System Architecture
 
-This document describes the technical design, module responsibilities, request lifecycle, data model, and filesystem layout of Batcave Cloud (v0.4.3).
+This document describes the technical design, module responsibilities, request lifecycle, data model, and filesystem layout of Batcave Cloud (v0.5.1).
 
 ---
 
@@ -74,7 +74,8 @@ The system separates concerns into discrete layers:
 - **Central Error Handling**: Provides user-friendly error views for HTTP 400, 403, 404, 413 (File Too Large), and 500.
 
 ### `server/config.py` — Configuration Management
-- **Environment File Loader (`load_environment_file`)**: Loads simple `KEY=value` configuration files without external dependencies.
+- **Automatic Configuration Discovery (`get_default_config_path`, `find_default_config_path`)**: Automatically discovers configuration files at `$XDG_CONFIG_HOME/batcave-cloud/batcave.env` or `~/.config/batcave-cloud/batcave.env` when `BATCAVE_CONFIG_FILE` is not explicitly exported.
+- **Environment File Loader (`load_environment_file`)**: Loads simple `KEY=value` configuration files without external dependencies. Supports both explicit paths (where missing file triggers an error) and auto-discovered default paths.
 - **Configuration Builder (`build_config`)**:
   - `DATA_ROOT`: Storage root directory (defaults to `/storage/emulated/0/BatCave`).
   - `DATABASE_PATH`: Points to `DATA_ROOT / "batcave.db"`.
@@ -86,7 +87,7 @@ The system separates concerns into discrete layers:
   - `SESSION_COOKIE_HTTPONLY`: Always `True`.
   - `SESSION_COOKIE_SAMESITE`: Configured to `Lax`.
   - `SESSION_COOKIE_SECURE`: Configurable boolean (set `True` when behind HTTPS).
-- **Security Validation (`validate_security_config`)**: Refuses to boot the server if `SECRET_KEY` or `PASSWORD_HASH` is missing or empty.
+- **Security Validation (`validate_security_config`)**: Refuses to boot the server if `SECRET_KEY` or `PASSWORD_HASH` is missing or empty. Never silently generates credentials; provides clear setup guidance.
 
 ### `server/auth.py` — Authentication & CSRF
 - **Password Verification (`verify_password`)**: Verifies passwords against `PASSWORD_HASH` using `werkzeug.security.check_password_hash`.
@@ -126,7 +127,7 @@ The system separates concerns into discrete layers:
   - Migration 2: Adds `folder_name TEXT` column to `projects` table safely.
 
 ### `server/routes.py` — Application Controllers
-- **Dashboard (`/`)**: Aggregates count statistics (files, photos, notes, ideas, active projects).
+- **Dashboard (`/`)**: Main Command Center aggregating storage capacity summary via `storage_usage`, real workspace counts (Notes, Ideas, Projects), quick action links to existing workflows, and recent items (Notes, Ideas, Active Projects) in $O(1)$ without recursive directory traversal.
 - **Files (`/files`, `/files/<subpath>`)**: Directory navigation, clickable breadcrumbs, file sorting (name, size, date), recursive search, upload, directory creation, rename, move (with descendant/cycle prevention), download, and safe open.
 - **Notes (`/notes`, `/notes/<id>`)**: Notes list, note creation, note editing/updating (with automatic `updated_at` timestamps), deletion, and search (title/content) ordered by most recently updated.
 - **Ideas (`/ideas`, `/ideas/<id>`)**: Quick-capture idea list, idea creation, editing/updating (preserving `created_at`), deletion, and search ordered newest-first.
@@ -135,11 +136,11 @@ The system separates concerns into discrete layers:
 - **Backups (`/backups`)**: View backup statistics.
 
 ### `server/manage.py` — Local Management CLI
-- Provides `create-config --output <path>` command:
+- Provides `create-config [--output <path>]` command:
   - Prompts securely for password using `getpass`.
   - Generates high-entropy secret key (`secrets.token_urlsafe(48)`).
   - Hashes password with Werkzeug.
-  - Writes private config file and sets file permissions to `0600` on POSIX systems.
+  - Writes private config file (defaulting to `~/.config/batcave-cloud/batcave.env`) and sets file permissions to `0600` on POSIX systems.
 
 ---
 

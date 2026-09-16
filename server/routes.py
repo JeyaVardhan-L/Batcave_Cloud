@@ -98,15 +98,32 @@ def _safe_entry_info(root: Path, item: Path) -> dict | None:
 def register_routes(app) -> None:
     @app.route("/")
     def dashboard():
-        files_root, photos_root = _root("files"), _root("photos")
+        data_root = Path(current_app.config["DATA_ROOT"])
+        usage = storage_usage(data_root)
         db = get_db()
+        note_count = db.execute("SELECT COUNT(*) FROM notes").fetchone()[0]
+        idea_count = db.execute("SELECT COUNT(*) FROM ideas").fetchone()[0]
+        project_count = db.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
+        active_project_count = db.execute("SELECT COUNT(*) FROM projects WHERE status = 'Active'").fetchone()[0]
+        recent_notes = db.execute(
+            "SELECT id, title, content, updated_at FROM notes ORDER BY updated_at DESC, id DESC LIMIT 5"
+        ).fetchall()
+        recent_ideas = db.execute(
+            "SELECT id, content, created_at FROM ideas ORDER BY created_at DESC, id DESC LIMIT 5"
+        ).fetchall()
+        active_projects = db.execute(
+            "SELECT id, name, description, status, folder_name, created_at FROM projects WHERE status = 'Active' ORDER BY created_at DESC, id DESC LIMIT 5"
+        ).fetchall()
         return render_template(
             "dashboard.html",
-            file_count=sum(1 for path in files_root.rglob("*") if path.is_file()),
-            photo_count=sum(1 for path in photos_root.rglob("*") if path.is_file()),
-            note_count=db.execute("SELECT COUNT(*) FROM notes").fetchone()[0],
-            idea_count=db.execute("SELECT COUNT(*) FROM ideas").fetchone()[0],
-            project_count=db.execute("SELECT COUNT(*) FROM projects WHERE status = 'Active'").fetchone()[0],
+            usage=usage,
+            note_count=note_count,
+            idea_count=idea_count,
+            project_count=project_count,
+            active_project_count=active_project_count,
+            recent_notes=recent_notes,
+            recent_ideas=recent_ideas,
+            active_projects=active_projects,
         )
 
     @app.route("/files")

@@ -27,14 +27,37 @@ def _integer(value: str | None, default: int, variable_name: str) -> int:
     return parsed
 
 
-def load_environment_file(path: str | None) -> None:
-    """Load a deliberately simple KEY=value file when explicitly requested."""
+def get_default_config_path() -> Path:
+    """Return the platform-appropriate default configuration path."""
+    xdg_config = os.environ.get("XDG_CONFIG_HOME")
+    if xdg_config:
+        return Path(xdg_config).expanduser() / "batcave-cloud" / "batcave.env"
+    return Path.home() / ".config" / "batcave-cloud" / "batcave.env"
+
+
+def find_default_config_path() -> Path | None:
+    """Find an existing configuration file in default platform locations."""
+    candidates: list[Path] = []
+    xdg_config = os.environ.get("XDG_CONFIG_HOME")
+    if xdg_config:
+        candidates.append(Path(xdg_config).expanduser() / "batcave-cloud" / "batcave.env")
+    candidates.append(Path.home() / ".config" / "batcave-cloud" / "batcave.env")
+    for candidate in candidates:
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def load_environment_file(path: str | Path | None, *, required: bool = True) -> None:
+    """Load a deliberately simple KEY=value file when requested or discovered."""
     if not path:
         return
 
     config_path = Path(path).expanduser()
     if not config_path.is_file():
-        raise RuntimeError(f"BATCAVE_CONFIG_FILE does not exist: {config_path}")
+        if required:
+            raise RuntimeError(f"BATCAVE_CONFIG_FILE does not exist: {config_path}")
+        return
 
     for line in config_path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
@@ -48,7 +71,13 @@ def load_environment_file(path: str | None) -> None:
 
 def build_config(overrides: dict | None = None) -> dict:
     """Build Flask configuration. Test overrides are applied last."""
-    load_environment_file(os.environ.get("BATCAVE_CONFIG_FILE"))
+    explicit_config = os.environ.get("BATCAVE_CONFIG_FILE")
+    if explicit_config:
+        load_environment_file(explicit_config, required=True)
+    else:
+        default_config = find_default_config_path()
+        if default_config is not None:
+            load_environment_file(default_config, required=False)
 
     data_root = Path(os.environ.get("BATCAVE_DATA_ROOT", DEFAULT_DATA_ROOT)).expanduser()
     config = {
@@ -77,5 +106,5 @@ def validate_security_config(config: dict) -> None:
         names = ", ".join(f"BATCAVE_{key}" for key in missing)
         raise RuntimeError(
             f"Missing required configuration: {names}. "
-            "Run 'python -m server.manage create-config --output <path>' first."
+            "Run 'python -m server.manage create-config' first or set BATCAVE_CONFIG_FILE."
         )

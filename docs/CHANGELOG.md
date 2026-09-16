@@ -4,6 +4,28 @@ All notable changes to the Batcave Cloud project are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to semantic milestone versioning.
 
+## [0.5.1] - Command Center Dashboard & Configuration Startup Discovery
+
+### Added
+- **Command Center Dashboard**: Transformed `GET /` into a comprehensive Dashboard aggregating real workspace data:
+  - Storage capacity widget displaying Used, Free, and Total disk capacity via $O(1)$ `shutil.disk_usage()` without recursive disk walking.
+  - Workspace counts displaying real counts for Notes, Ideas, Projects (including active count), and storage metrics for Files.
+  - Quick Actions toolbar with one-click navigation to create notes, capture ideas, create projects, or browse files.
+  - Recent Notes list ordered by `updated_at DESC, id DESC` linking to existing note editing views.
+  - Recent Ideas list ordered by `created_at DESC, id DESC` linking to existing idea editing views.
+  - Active Projects list filtered to projects with `status = 'Active'` linking to existing project detail views.
+- **Robust Configuration Discovery**: Added automatic fallback discovery for private configuration files in `server/config.py`:
+  - Automatically searches standard platform locations: `$XDG_CONFIG_HOME/batcave-cloud/batcave.env` and `~/.config/batcave-cloud/batcave.env`.
+  - Enables launching the application via `python -m server.app` without manually exporting `BATCAVE_CONFIG_FILE` in every new shell or Termux session.
+  - Preserves strict precedence: explicitly set `BATCAVE_CONFIG_FILE` overrides default discovery.
+  - Preserves strict security validation: refuses to boot and raises clear setup instructions if configuration is missing, without ever generating secret keys or passwords behind the scenes.
+- **CLI Default Output**: Updated `python -m server.manage create-config` to default `--output` to `~/.config/batcave-cloud/batcave.env` (`get_default_config_path()`), streamlining initial setup.
+- **Navigation Update**: Updated top navigation in `web/templates/base.html` to clearly and consistently present Dashboard alongside Files, Photos, Notes, Ideas, Projects, and Backups.
+- **Dashboard Tests**: Added `tests/test_dashboard_v051.py` (14 tests) covering authentication gating, metrics accuracy, ordering semantics, quick actions, absence of path/secret leakage, config discovery, explicit precedence, and failure handling.
+
+### Changed
+- Removed expensive recursive file walking (`rglob("*")`) from `GET /` dashboard handler in favor of lightweight storage capacity statistics.
+
 ---
 
 ## [0.4.3] - Projects Workspace Improvements

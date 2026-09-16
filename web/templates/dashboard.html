@@ -4,100 +4,129 @@
 
 {% block content %}
 
-<section class="hero">
-
+<div class="page-header dashboard-header">
     <div>
-        <p class="eyebrow">PERSONAL CLOUD</p>
-
-        <h1>Welcome to the Batcave.</h1>
-
-        <p>
-            Your private workspace running directly on your tablet.
-        </p>
+        <p class="eyebrow">COMMAND CENTER</p>
+        <h1>Dashboard</h1>
+        <p>Personal cloud overview, workspace statistics, and quick workflows.</p>
     </div>
 
+    <div class="storage-summary" aria-label="Storage capacity">
+        <div><span>Used</span><strong>{{ usage.used }}</strong></div>
+        <div><span>Free</span><strong>{{ usage.free }}</strong></div>
+        <div><span>Total</span><strong>{{ usage.total }}</strong></div>
+    </div>
+</div>
+
+<section class="panel quick-actions-panel">
+    <h2>Quick Actions</h2>
+    <div class="quick-actions">
+        <a href="{{ url_for('notes') }}" class="button">📝 New Note</a>
+        <a href="{{ url_for('ideas') }}" class="button">💡 New Idea</a>
+        <a href="{{ url_for('projects') }}" class="button">🚀 New Project</a>
+        <a href="{{ url_for('files') }}" class="button secondary">📁 Open Files</a>
+    </div>
 </section>
 
-
 <section class="dashboard-grid">
-
     <a href="{{ url_for('files') }}" class="card">
         <div class="card-icon">📁</div>
-
         <h2>Files</h2>
-
-        <p>
-            Browse, upload and manage your personal files.
-        </p>
-
-        <strong>{{ file_count }} files</strong>
+        <p>Browse, upload, and manage personal files.</p>
+        <strong>{{ usage.used }} used ({{ usage.free }} free)</strong>
     </a>
-
-
-    <a href="{{ url_for('photos') }}" class="card">
-        <div class="card-icon">🖼️</div>
-
-        <h2>Photos</h2>
-
-        <p>
-            Your personal photo collection.
-        </p>
-
-        <strong>{{ photo_count }} photos</strong>
-    </a>
-
 
     <a href="{{ url_for('notes') }}" class="card">
         <div class="card-icon">📝</div>
-
         <h2>Notes</h2>
-
-        <p>
-            Store persistent notes locally.
-        </p>
-
+        <p>Store persistent notes locally.</p>
         <strong>{{ note_count }} notes</strong>
     </a>
 
-
     <a href="{{ url_for('ideas') }}" class="card">
         <div class="card-icon">💡</div>
-
         <h2>Ideas</h2>
-
-        <p>
-            Quickly capture ideas before they disappear.
-        </p>
-
+        <p>Quickly capture thoughts before they disappear.</p>
         <strong>{{ idea_count }} ideas</strong>
     </a>
 
-
     <a href="{{ url_for('projects') }}" class="card">
         <div class="card-icon">🚀</div>
-
         <h2>Projects</h2>
-
-        <p>
-            Keep track of things you're building.
-        </p>
-
-        <strong>{{ project_count }} active projects</strong>
+        <p>Things you're building or planning.</p>
+        <strong>{{ project_count }} projects ({{ active_project_count }} active)</strong>
     </a>
+</section>
 
+<section class="dashboard-columns">
+    <div class="panel dashboard-column">
+        <div class="column-header">
+            <h2>Recent Notes</h2>
+            <a href="{{ url_for('notes') }}" class="small-button secondary">View all</a>
+        </div>
+        {% if recent_notes %}
+            <ul class="clean-list dashboard-list">
+                {% for note in recent_notes %}
+                    <li class="dashboard-item">
+                        <a class="note-title-link" href="{{ url_for('edit_note', note_id=note['id']) }}">
+                            <strong>{{ note['title'] }}</strong>
+                        </a>
+                        <small class="muted">Updated {{ note['updated_at'] }}</small>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="empty">No notes yet.</div>
+        {% endif %}
+    </div>
 
-    <a href="{{ url_for('backups') }}" class="card">
-        <div class="card-icon">💾</div>
+    <div class="panel dashboard-column">
+        <div class="column-header">
+            <h2>Recent Ideas</h2>
+            <a href="{{ url_for('ideas') }}" class="small-button secondary">View all</a>
+        </div>
+        {% if recent_ideas %}
+            <ul class="clean-list dashboard-list">
+                {% for idea in recent_ideas %}
+                    <li class="dashboard-item">
+                        <a class="idea-content-link" href="{{ url_for('edit_idea', idea_id=idea['id']) }}">
+                            {{ idea['content'] }}
+                        </a>
+                        <small class="muted">{{ idea['created_at'] }}</small>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="empty">No ideas captured yet.</div>
+        {% endif %}
+    </div>
 
-        <h2>Backups</h2>
-
-        <p>
-            Backup management will grow here.
-        </p>
-
-        <strong>Coming online</strong>
-    </a>
-
+    <div class="panel dashboard-column">
+        <div class="column-header">
+            <h2>Active Projects</h2>
+            <a href="{{ url_for('projects') }}" class="small-button secondary">View all</a>
+        </div>
+        {% if active_projects %}
+            <ul class="clean-list dashboard-list">
+                {% for project in active_projects %}
+                    <li class="dashboard-item">
+                        <div class="project-header">
+                            <a class="project-title-link" href="{{ url_for('project_detail', project_id=project['id']) }}">
+                                <strong>{{ project['name'] }}</strong>
+                            </a>
+                            <span class="status">{{ project['status'] }}</span>
+                        </div>
+                        {% if project['description'] %}
+                            <p class="project-snippet">{{ project['description'] }}</p>
+                        {% endif %}
+                        <small class="muted">Created {{ project['created_at'] }}</small>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="empty">No active projects.</div>
+        {% endif %}
+    </div>
 </section>
 
 {% endblock %}

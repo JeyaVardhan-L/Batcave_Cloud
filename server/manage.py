@@ -11,6 +11,12 @@ from pathlib import Path
 from werkzeug.security import generate_password_hash
 
 
+try:
+    from .config import get_default_config_path
+except ImportError:  # pragma: no cover
+    from config import get_default_config_path
+
+
 def create_config(output: Path) -> None:
     password = getpass.getpass("Create Batcave password: ")
     confirmation = getpass.getpass("Confirm Batcave password: ")
@@ -31,17 +37,31 @@ def create_config(output: Path) -> None:
         os.chmod(output, 0o600)
     except OSError:
         pass
-    print(f"Created {output}. Set BATCAVE_CONFIG_FILE to this path before starting the app.")
+    print(f"Created {output}.")
+    try:
+        is_default = output.resolve() == get_default_config_path().resolve()
+    except Exception:
+        is_default = False
+    if is_default:
+        print("Configuration saved to default location. Batcave Cloud will automatically discover it.")
+    else:
+        print("Set BATCAVE_CONFIG_FILE to this path before starting the app.")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Batcave Cloud local administration")
     command = parser.add_subparsers(dest="command", required=True)
     create = command.add_parser("create-config", help="create a secret key and password hash")
-    create.add_argument("--output", type=Path, required=True, help="path for the private KEY=value config file")
+    create.add_argument(
+        "--output",
+        type=Path,
+        default=None,
+        help="path for the private KEY=value config file (defaults to ~/.config/batcave-cloud/batcave.env)",
+    )
     args = parser.parse_args()
     if args.command == "create-config":
-        create_config(args.output.expanduser())
+        output_path = args.output.expanduser() if args.output else get_default_config_path()
+        create_config(output_path)
 
 
 if __name__ == "__main__":

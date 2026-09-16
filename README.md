@@ -2,9 +2,9 @@
 
 A self-hosted, single-user personal cloud workspace designed for Local Area Networks (LAN). Built with Python, Flask, SQLite, and vanilla web technologies, Batcave Cloud was originally created to turn an unused Android tablet into an always-on home server, and has evolved into an educational, modular personal cloud system.
 
-**Current Version**: `v0.4.3`
+**Current Version**: `v0.5.1`
 <br>
-**Test Suite**: 51 passed (automated integration and unit tests)
+**Test Suite**: 65 passed (automated integration and unit tests)
 
 ---
 
@@ -22,6 +22,13 @@ Rather than deploying a pre-packaged, black-box container or an off-the-shelf so
 ## What It Can Do
 
 Batcave Cloud currently provides a secure, web-based workspace with the following capabilities:
+
+### Dashboard (Command Center)
+- **Central Landing View**: Real-time overview of the entire Batcave workspace at `GET /`.
+- **Lightweight Storage Metrics**: $O(1)$ disk capacity summary (used, free, total) via `storage_usage()` without recursive filesystem walking.
+- **Aggregated Statistics**: Real counts for Notes, Ideas, and Projects (including active status).
+- **Quick Actions**: One-click workflows to create notes, capture ideas, start projects, or open the file browser.
+- **Recent Feeds**: Live chronological lists of recent notes, ideas, and active projects linking directly into editor views.
 
 ### Authentication & Security
 - **Single-User Password Authentication**: Access is protected by a session-based login screen using industry-standard password hashing via Werkzeug (`scrypt`/PBKDF2).
@@ -77,8 +84,10 @@ v0.4.1 (Notes Workspace)
   └── Note editing, updated_at timestamps, title/content search, 404 safety
 v0.4.2 (Ideas Workspace)
   └── Quick-capture inbox, idea editing, newest-first search
-v0.4.3 (Projects Workspace) [Current]
+v0.4.3 (Projects Workspace)
   └── Project detail/edit, status gating, folder navigation, NULL folder safety, folder retention on delete
+v0.5.1 (Command Center Dashboard & Config Discovery) [Current]
+  └── Central dashboard with real-time stats and quick actions; automatic discovery of ~/.config/batcave-cloud/batcave.env
 ```
 
 ### v0.1 — Initial Prototype
@@ -106,17 +115,22 @@ v0.4.3 (Projects Workspace) [Current]
 - **Why**: Quick thoughts require rapid retrieval and editing without the formal structure of a full note.
 - **Verification**: 11 new automated tests (`tests/test_ideas_v042.py`).
 
-### v0.4.3 — Projects Workspace (Current)
+### v0.4.3 — Projects Workspace
 - **What Changed**: Built project detail and editing views (`GET /projects/<id>`, `POST /projects/<id>/update`), status transitions (`Active`, `Paused`, `Archived`), and safe project folder navigation (`/projects/<id>/folder`). Handled legacy NULL folders gracefully, and enforced filesystem folder retention upon project record deletion.
 - **Why**: Bridged database project metadata with dedicated filesystem folders, ensuring that deleting a project metadata entry never deletes project source files.
 - **Verification**: 14 new automated tests (`tests/test_projects_v043.py`).
+
+### v0.5.1 — Command Center Dashboard & Config Discovery (Current)
+- **What Changed**: Replaced placeholder homepage with an authenticated Command Center Dashboard (`GET /`) aggregating real database statistics (Notes, Ideas, Projects), $O(1)$ filesystem capacity summary via `storage_usage`, quick action shortcuts to all core workflows, and chronological feeds for recent notes, ideas, and active projects. Added automatic platform-neutral configuration discovery (`~/.config/batcave-cloud/batcave.env` / `$XDG_CONFIG_HOME`), eliminating the need to manually export `BATCAVE_CONFIG_FILE` in every new shell or Termux session while preserving explicit precedence and strict security validation.
+- **Why**: Transformed the landing experience into a functional daily dashboard and solved the session-specific environment variable problem on Android/Termux and other shells.
+- **Verification**: 14 new automated tests (`tests/test_dashboard_v051.py`).
 
 ---
 
 ## Current Status
 
-- **Release**: `v0.4.3`
-- **Automated Tests**: 51 passing tests across 5 test suites.
+- **Release**: `v0.5.1`
+- **Automated Tests**: 65 passing tests across 6 test suites.
 - **Verified Compatibility**: Windows 11 / PowerShell, Linux (Ubuntu/Debian), macOS, and Android 13 (Termux `aarch64`).
 - **Codebase Health**: Zero external runtime dependencies beyond Flask and Pillow; fully typed server modules with clean test isolation.
 
@@ -291,22 +305,24 @@ pip install -r requirements-dev.txt
 Create your secret key and password hash outside the repository:
 
 ```bash
-# Linux / macOS / Termux
-python -m server.manage create-config --output ~/.config/batcave-cloud/batcave.env
-export BATCAVE_CONFIG_FILE=~/.config/batcave-cloud/batcave.env
+# Any platform (generates ~/.config/batcave-cloud/batcave.env):
+python -m server.manage create-config
+
+# Non-Android systems: set your local data directory
+# Linux / macOS:
 export BATCAVE_DATA_ROOT=~/BatCave
 
-# Windows PowerShell
-python -m server.manage create-config --output "$HOME\.config\batcave-cloud\batcave.env"
-$env:BATCAVE_CONFIG_FILE = "$HOME\.config\batcave-cloud\batcave.env"
+# Windows PowerShell:
 $env:BATCAVE_DATA_ROOT = "$HOME\BatCave"
 ```
+
+Batcave Cloud automatically discovers configuration files at `~/.config/batcave-cloud/batcave.env`.
 
 ### 4. Run the Tests
 ```bash
 python -m pytest -q
 ```
-*(Expected: `51 passed`)*
+*(Expected: `65 passed`)*
 
 ### 5. Start the Server
 ```bash
@@ -326,8 +342,7 @@ cd Batcave_Cloud
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements-dev.txt
-python -m server.manage create-config --output "$HOME\.config\batcave-cloud\batcave.env"
-$env:BATCAVE_CONFIG_FILE = "$HOME\.config\batcave-cloud\batcave.env"
+python -m server.manage create-config
 $env:BATCAVE_DATA_ROOT = "$HOME\BatCave"
 python -m server.app
 ```
@@ -340,8 +355,7 @@ cd Batcave_Cloud
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
-python -m server.manage create-config --output ~/.config/batcave-cloud/batcave.env
-export BATCAVE_CONFIG_FILE=~/.config/batcave-cloud/batcave.env
+python -m server.manage create-config
 export BATCAVE_DATA_ROOT=~/BatCave
 python -m server.app
 ```
@@ -353,8 +367,7 @@ cd Batcave_Cloud
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements-dev.txt
-python -m server.manage create-config --output ~/.config/batcave-cloud/batcave.env
-export BATCAVE_CONFIG_FILE=~/.config/batcave-cloud/batcave.env
+python -m server.manage create-config
 export BATCAVE_DATA_ROOT=~/BatCave
 python -m server.app
 ```
@@ -377,12 +390,11 @@ The original deployment target for Batcave Cloud:
    ```
 4. Generate config and run with wake-lock:
    ```bash
-   python -m server.manage create-config --output ~/.config/batcave-cloud/batcave.env
-   export BATCAVE_CONFIG_FILE=~/.config/batcave-cloud/batcave.env
+   python -m server.manage create-config
    termux-wake-lock
    python -m server.app
    ```
-*(On Android, `BATCAVE_DATA_ROOT` automatically defaults to `/storage/emulated/0/BatCave` in shared storage).*
+*(On Android, `BATCAVE_DATA_ROOT` automatically defaults to `/storage/emulated/0/BatCave` in shared storage, and config is auto-discovered from `~/.config/batcave-cloud/batcave.env` across all sessions).*
 
 For complete platform notes and hardware history, see [docs/SETUP.md](docs/SETUP.md).
 
@@ -390,11 +402,11 @@ For complete platform notes and hardware history, see [docs/SETUP.md](docs/SETUP
 
 ## Configuration
 
-Configuration values are parsed from environment variables or loaded from the file referenced by `BATCAVE_CONFIG_FILE`.
+Configuration values are parsed from environment variables or loaded from the file referenced by `BATCAVE_CONFIG_FILE`. If `BATCAVE_CONFIG_FILE` is unset, Batcave Cloud automatically discovers `~/.config/batcave-cloud/batcave.env` (or `$XDG_CONFIG_HOME/batcave-cloud/batcave.env`).
 
 | Variable | Default | Purpose |
 | :--- | :--- | :--- |
-| `BATCAVE_CONFIG_FILE` | *(None)* | Path to private `KEY=value` configuration file |
+| `BATCAVE_CONFIG_FILE` | *(Auto-discovered)* | Path to private `KEY=value` config file (overrides default discovery) |
 | `BATCAVE_SECRET_KEY` | *(Required)* | High-entropy string for session signing |
 | `BATCAVE_PASSWORD_HASH` | *(Required)* | Werkzeug password hash string |
 | `BATCAVE_DATA_ROOT` | `/storage/emulated/0/BatCave` | Path to storage directory holding personal files & database |
@@ -417,8 +429,8 @@ python -m pytest -q
 
 Output:
 ```text
-...................................................                      [100%]
-51 passed in 37.93s
+.................................................................        [100%]
+65 passed in 42.23s
 ```
 
 Test coverage by module:
@@ -427,6 +439,7 @@ Test coverage by module:
 - `tests/test_notes_v041.py` (7 tests): Notes CRUD, editing, `updated_at` timestamps, search.
 - `tests/test_ideas_v042.py` (11 tests): Ideas capture, editing, newest-first search, validation.
 - `tests/test_projects_v043.py` (14 tests): Projects detail/editing, folder navigation, NULL folder safety, folder retention on delete.
+- `tests/test_dashboard_v051.py` (14 tests): Dashboard auth, counts, ordering, quick actions, path/secret leakage, config discovery & precedence.
 
 ---
 
